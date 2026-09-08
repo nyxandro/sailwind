@@ -1,0 +1,405 @@
+@import '@fontsource-variable/manrope';
+@import '@fontsource/cormorant-garamond/cyrillic-500-italic.css';
+
+:root {
+  font-family: 'Manrope Variable', 'Trebuchet MS', sans-serif;
+  color: #244a43;
+  background: #f4f3eb;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  --ink: #244a43;
+  --muted: #64766a;
+  --cream: #f4f3eb;
+  --lime: #d9edaa;
+  --line: #355c4526;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+#app { --header-height: 86px; display: flow-root; }
+button, input { font: inherit; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; color: inherit; }
+button { border: 0; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #b57537; outline-offset: 5px; }
+button { transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:hover:not(:disabled) { filter: brightness(1.025); }
+[hidden] { display: none !important; }
+.icon { width: 22px; height: 22px; flex-shrink: 0; vertical-align: middle; }
+.site-header { height: var(--header-height); margin-top: 0; padding: 0 40px; display: flex; align-items: center; gap: 38px; border-bottom: 1px solid #355c4512; transition: margin-top 420ms ease, visibility 0s; }
+.brand { color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 11px; font-size: 32px; font-weight: 800; letter-spacing: -1.8px; }
+.brand .icon { width: 34px; height: 38px; margin-top: -4px; }
+.brand-dot { color: #82a171; }
+.header-description { display: flex; align-items: center; gap: 16px; font-size: 9px; font-weight: 600; letter-spacing: 2px; color: #7d887a; padding-top: 4px; }
+.small-line { width: 30px; height: 1px; background: #a8b09f; }
+.header-actions { margin-left: auto; display: flex; align-items: center; padding-right: 150px; }
+.edition { color: #798375; font-size: 9px; letter-spacing: 1.7px; }
+.help-button { position: fixed; z-index: 20; top: calc((var(--header-height) - 40px) / 2); right: 40px; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 9px; background: transparent; font-size: 12px; padding: 10px 0 10px 16px; border-left: 1px solid var(--line); }
+.help-button .icon { width: 19px; height: 19px; }
+.ocean-stage { height: calc(100svh - var(--header-height)); min-height: 690px; position: relative; overflow: hidden; isolation: isolate; background: #82b6a9; transition: height 420ms ease; }
+.in-voyage .site-header { margin-top: calc(-1 * var(--header-height)); visibility: hidden; transition: margin-top 420ms ease, visibility 0s 420ms; }
+#app.in-voyage .ocean-stage { height: 100svh; }
+.in-voyage .help-button { top: 14px; right: 28px; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 1px solid #f8f8e88c; border-radius: 50%; background: #f4f3e5ed; box-shadow: 0 3px 15px #244a4314; }
+.in-voyage .help-button span { display: none; }
+.in-voyage .wind-panel { top: 74px; }
+.in-voyage .camera-tools { top: 400px; }
+.scene { position: absolute; inset: 0; touch-action: none; cursor: grab; }
+.scene:active { cursor: grabbing; }
+.scene canvas { display: block; width: 100%; height: 100%; }
+.scene-vignette { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, #e4eddbcc 0%, #d6e7d670 25%, transparent 49%), linear-gradient(0deg, #244e4526, transparent 28%); transition: opacity 1s; }
+.location { position: absolute; top: 28px; left: 36px; display: flex; align-items: center; gap: 11px; font-size: 9px; letter-spacing: 1.5px; font-weight: 650; }
+.live-dot, .weather-dot { width: 6px; height: 6px; border-radius: 50%; background: #4e7952; box-shadow: 0 0 0 4px #517e5510; display: inline-block; }
+.location-divider { margin: 0 3px; opacity: 0.4; }
+.location-type { opacity: 0.58; font-size: 8px; letter-spacing: 1.4px; }
+.intro { position: absolute; left: 5.2%; top: 17%; width: 430px; transition: opacity 500ms, transform 600ms, visibility 600ms; }
+.eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 1.5px; line-height: 1.6; }
+.intro .eyebrow { color: #62765d; margin-bottom: 20px; font-size: 9px; letter-spacing: 2.3px; }
+h1 { font-size: clamp(48px, 4.5vw, 72px); font-weight: 550; line-height: 1.12; letter-spacing: -3.8px; margin: 0 0 23px; }
+h1 > span { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.18em; letter-spacing: -2.8px; font-weight: 500; color: #3e6e58; }
+.intro-description { color: #4f6d5b; font-size: 13px; line-height: 1.95; margin: 0 0 27px; }
+.primary-button { background: var(--ink); color: #f5f4e8; border-radius: 7px; display: inline-flex; justify-content: space-between; align-items: center; gap: 30px; min-height: 54px; padding: 15px 22px; font-size: 12px; font-weight: 550; box-shadow: 0 5px 12px #244a4310; }
+.primary-button:hover { background: #173c35; box-shadow: 0 6px 20px #244a4326; }
+.primary-button .icon { width: 20px; height: 20px; }
+.intro-meta { display: flex; gap: 18px; margin-top: 14px; color: #617361; font-size: 9px; }
+.intro-meta > span { display: flex; align-items: center; gap: 6px; }
+.intro-meta > span + span:before { content: ''; width: 2px; height: 2px; border-radius: 50%; background: #617361; margin-right: 7px; }
+.intro-meta i { width: 5px; height: 5px; background: #6a8d59; border-radius: 50%; }
+.intro-rule { display: flex; align-items: center; gap: 13px; margin-top: 38px; color: #627761; }
+.rule-symbol { font-family: Georgia, serif; font-size: 33px; font-weight: 400; }
+.intro-rule p { border-left: 1px solid #6c82613d; padding-left: 14px; font-size: 10px; line-height: 1.85; margin: 0; }
+.intro-rule strong { font-weight: 500; }
+.glass { background: #f5f4e6eb; border: 1px solid #fbfaed96; box-shadow: 0 6px 35px #264d3910; border-radius: 12px; backdrop-filter: blur(16px); }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.panel-heading .icon { width: 17px; height: 17px; opacity: 0.7; }
+.wind-panel { position: absolute; right: 28px; top: 26px; width: 222px; padding: 19px 19px 15px; }
+.wind-panel .eyebrow { font-size: 8px; letter-spacing: 1.5px; }
+.wind-reading { display: flex; align-items: center; gap: 12px; margin: 16px 0 8px; }
+.wind-reading > .icon { width: 29px; height: 29px; color: #77946e; }
+.wind-reading strong { font-size: 33px; font-weight: 500; letter-spacing: -1.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+.wind-reading > span { font-size: 9px; color: #647666; line-height: 1.5; }
+.wind-description { display: block; font-size: 8px; }
+.compass { width: 156px; height: 156px; margin: 8px auto 10px; }
+.compass-dial { width: 100%; height: 100%; overflow: visible; }
+.compass-dial text { fill: #6b7a68; font-size: 10px; text-anchor: middle; font-weight: 500; }
+.wind-caption { text-align: center; font-size: 9px; color: #6c7766; border-top: 1px solid var(--line); padding-top: 12px; }
+.wind-arrow { display: inline-block; font-size: 14px; margin-right: 5px; color: #427c86; }
+.camera-tools { position: absolute; right: 28px; top: 352px; display: flex; gap: 8px; }
+.round-button { width: 37px; height: 37px; display: inline-flex; align-items: center; justify-content: center; background: #f4f3e5d9; border: 1px solid #f8f8e88c; border-radius: 50%; }
+.round-button:hover { background: #f7f6e8; }
+.round-button .icon { width: 17px; height: 17px; }
+.round-button[aria-pressed='true'] { background: #d9e8b6; border-color: #a9bc86; }
+.sailing-feedback { position: absolute; left: 50%; bottom: 206px; transform: translateX(-50%); display: flex; align-items: center; gap: 11px; color: #f6f7e8; white-space: nowrap; text-shadow: 0 1px 8px #1c57464d; pointer-events: none; }
+.feedback-symbol { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #f2f2dc7a; display: grid; place-items: center; background: #386d5426; }
+.feedback-symbol .icon { width: 19px; height: 19px; }
+.sailing-feedback strong { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.1px; }
+.sailing-feedback div > span { display: block; font-size: 9px; margin-top: 4px; opacity: 0.85; }
+.sailing-feedback[data-tone='warning'] .feedback-symbol { color: #ffe0ac; border-color: #ffe0ac; }
+.instruments { position: absolute; left: 32px; bottom: 55px; display: flex; width: 760px; height: 124px; padding: 19px 0; }
+.instrument { padding: 0 20px; }
+.instrument + .instrument { border-left: 1px solid var(--line); }
+.speed-instrument { width: 140px; flex-shrink: 0; }
+.course-instrument { width: 120px; flex-shrink: 0; }
+.instrument .eyebrow { font-size: 8px; letter-spacing: 1.4px; color: #6a7764; }
+.instrument-value { display: flex; align-items: baseline; gap: 8px; margin-top: 3px; }
+.instrument-value strong { font-size: 39px; line-height: 1.2; font-weight: 450; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.instrument-value > span { color: #7e8775; font-size: 12px; }
+.speed-bars { display: flex; gap: 2px; margin-top: 7px; }
+.speed-bars i { flex: 1; min-width: 0; max-width: 4px; height: 7px; background: #ccd4bf; border-radius: 1px; }
+.speed-bars i.filled { background: #5c8464; }
+.instrument-note { display: block; margin-top: 6px; color: #76816d; font-size: 9px; }
+.sail-instrument { flex: 1; min-width: 0; }
+.sail-instrument[data-sail='jib'] { --sail-accent: #a47c56; }
+.sail-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.sail-heading strong { font-size: 14px; font-weight: 600; }
+input[type='range'] { --trim-start: 50%; --trim-end: 72%; --sail-track: linear-gradient(to right, transparent calc(50% - 1px), #244a43 calc(50% - 1px), #244a43 calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(to right, #d2d8c4 var(--trim-start), var(--sail-accent, #6c8d68) var(--trim-start), var(--sail-accent, #6c8d68) var(--trim-end), #d2d8c4 var(--trim-end)); display: block; width: 100%; appearance: none; -webkit-appearance: none; height: 18px; background: transparent; cursor: pointer; margin: 0; touch-action: pan-y; }
+input[type='range']::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; background: var(--sail-track); }
+input[type='range']::-moz-range-track { height: 5px; border-radius: 5px; background: var(--sail-track); }
+input[type='range']::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; margin-top: -4.5px; background: #f7f5e7; border: 3px solid var(--sail-accent, #4d7555); border-radius: 50%; box-shadow: 0 1px 3px #244a4330; }
+input[type='range']::-moz-range-thumb { width: 9px; height: 9px; background: #f7f5e7; border: 3px solid var(--sail-accent, #4d7555); border-radius: 50%; }
+.trim-labels { display: flex; align-items: center; justify-content: space-between; font-size: 8px; color: #7d8572; margin-top: 2px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 20px; border: 1px solid #496b4d33; border-radius: 4px; font-family: inherit; font-size: 10px; padding: 1px 4px; background: #f2f1e136; font-weight: 500; }
+.trim-labels kbd { min-width: 13px; height: 14px; font-size: 8px; padding: 0 2px; border-color: #496b4d22; }
+.power-label { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 8px; color: #66805c; }
+.power-label strong { margin-left: auto; font-size: 9px; font-weight: 600; }
+.power-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.power-label[data-tone='warning'] { color: #a46b3d; }
+.chart-panel { position: absolute; right: 28px; bottom: 28px; width: 252px; padding: 15px 16px 12px; }
+.chart-panel .eyebrow { font-size: 7px; letter-spacing: 1.4px; }
+.chart-panel .panel-heading .icon { width: 14px; height: 14px; }
+#chart { display: block; width: 100%; height: auto; margin: 10px 0 7px; }
+.chart-footer { display: flex; justify-content: space-between; color: #74806d; font-size: 8px; border-top: 1px solid var(--line); padding-top: 9px; }
+.chart-footer > span { display: flex; align-items: center; gap: 5px; }
+.map-boat-dot { width: 5px; height: 7px; background: var(--ink); clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); }
+.map-route-dot { width: 6px; height: 6px; border: 1px solid #87916b; border-radius: 50%; }
+.desktop-controls { position: absolute; bottom: 23px; left: 36px; display: flex; gap: 15px; align-items: center; color: #e2edda; font-size: 8px; }
+.desktop-controls > span { display: flex; align-items: center; gap: 4px; }
+.desktop-controls > span > span { margin-left: 4px; }
+.desktop-controls > i { width: 2px; height: 2px; background: #e2edda70; border-radius: 50%; }
+.desktop-controls kbd { border-color: #eff4dd40; background: #dfead218; min-width: 17px; height: 17px; font-size: 8px; }
+.desktop-controls .icon { width: 14px; height: 17px; }
+.touch-controls { display: none; }
+.session-controls { position: absolute; left: 32px; top: 257px; display: flex; gap: 8px; }
+.session-controls .round-button { border-radius: 8px; width: 40px; height: 38px; }
+.voyage-panel { position: absolute; top: 65px; left: 32px; width: 270px; padding: 20px; }
+.voyage-panel h2 { font-size: 21px; font-weight: 550; letter-spacing: -0.7px; margin: 12px 0 4px; }
+.voyage-panel p { color: #7a8473; font-size: 9px; margin: 0; }
+.voyage-panel .eyebrow { font-size: 8px; letter-spacing: 1.2px; }
+.route-progress { display: flex; align-items: center; margin: 20px 0 15px; }
+.route-progress > span { width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid #b1bda2; border-radius: 50%; font-size: 8px; color: #86917a; }
+.route-progress > i { flex: 1; height: 1px; background: #c0cbb2; }
+.route-progress > span[data-status='active'] { background: #d9e8ad; color: #3d6045; border-color: #a9bb83; box-shadow: 0 0 0 3px #d9e8ad50; }
+.route-progress > span[data-status='done'] { background: #426c54; color: #f4f3e4; border-color: #426c54; }
+.voyage-stats { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: #78836d; }
+.voyage-stats strong { color: var(--ink); font-weight: 600; }
+#elapsed { font-variant-numeric: tabular-nums; }
+.waypoint-marker { position: absolute; top: 0; left: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; color: #f4f7d5; text-shadow: 0 2px 8px #244a4350; }
+#marker-number { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #eaf5bfc9; display: grid; place-items: center; background: #315e3e5c; font-size: 10px; }
+#marker-distance { font-size: 9px; margin-top: 5px; }
+.waypoint-marker i { width: 1px; height: 19px; background: #e9f2b2b0; margin-top: 6px; }
+[data-mode='ready'] .voyage-panel, [data-mode='ready'] .session-controls { display: none; }
+[data-mode='ready'] .sailing-feedback { left: 57%; }
+[data-mode='sailing'] .intro, [data-mode='paused'] .intro, [data-mode='finished'] .intro { opacity: 0; transform: translateX(-25px); visibility: hidden; pointer-events: none; }
+[data-mode='sailing'] .scene-vignette, [data-mode='paused'] .scene-vignette, [data-mode='finished'] .scene-vignette { opacity: 0.35; }
+.state-overlay { position: absolute; inset: 0; background: #31554945; backdrop-filter: blur(7px); display: grid; place-items: center; z-index: 5; padding: 24px; }
+.state-card { background: #f4f2e5; border: 1px solid #f9f8ed; border-radius: 16px; width: min(480px, 100%); padding: 36px; text-align: center; box-shadow: 0 18px 80px #1e413424; }
+.state-icon { display: grid; place-items: center; margin: 0 auto 20px; border: 1px solid #b8c6a2; border-radius: 50%; width: 66px; height: 66px; background: #d9e7b6; }
+.state-icon .icon { width: 30px; height: 30px; }
+.state-card .eyebrow { font-size: 8px; }
+.state-card h2 { font-size: 31px; letter-spacing: -1px; line-height: 1.2; font-weight: 550; margin: 14px 0; }
+.state-card p { font-size: 12px; color: #748069; line-height: 1.8; margin-bottom: 25px; }
+.state-card .primary-button { margin-top: 7px; }
+.finish-stats { display: flex; justify-content: space-around; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 19px 0; margin: 5px 0 20px; }
+.finish-stats strong { font-size: 19px; font-weight: 500; display: block; }
+.finish-stats span { font-size: 8px; color: #79836d; display: block; margin-top: 5px; }
+dialog { border: 1px solid #f6f5e8; border-radius: 16px; padding: 0; background: #f4f2e7; color: var(--ink); width: min(560px, calc(100% - 32px)); max-height: calc(100svh - 40px); box-shadow: 0 20px 100px #102d3a40; }
+dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
+.dialog-inner { position: relative; padding: 38px; }
+.dialog-close { position: absolute; top: 16px; right: 16px; background: #e5e8d7; }
+.dialog-inner > h2 { font-size: 34px; letter-spacing: -1.6px; font-weight: 500; margin: 16px 0 10px; }
+.dialog-lead { font-size: 12px; color: #7a846e; line-height: 1.8; }
+.help-steps { display: grid; gap: 21px; margin: 29px 0; }
+.help-steps article { display: flex; gap: 17px; }
+.help-steps article > span { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid #b6c1a4; border-radius: 50%; font-size: 10px; color: #7a8d6f; }
+.help-steps h3 { font-size: 13px; font-weight: 600; margin: 3px 0 7px; }
+.help-steps p { font-size: 11px; line-height: 1.9; color: #73816a; margin: 0; }
+.help-note { display: flex; gap: 13px; padding: 15px; background: #e6ead7; border-radius: 8px; margin-bottom: 23px; }
+.help-note p { font-size: 10px; line-height: 1.8; margin: 0; color: #6a7c60; }
+.help-note .icon { width: 20px; height: 20px; margin-top: 2px; }
+.dialog-inner > .primary-button { width: 100%; }
+.loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #dce7d6; z-index: 10; font-size: 12px; color: #5f795c; }
+.loading-sail .icon { width: 50px; height: 50px; animation: bob 2s ease-in-out infinite; }
+.error-message { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: min(480px, calc(100% - 40px)); padding: 25px; background: #f8f1df; border: 1px solid #cfb990; border-radius: 12px; color: #805c39; line-height: 1.8; font-size: 13px; z-index: 20; }
+.header-description, .edition, .state-card p { color: #62715e; }
+.sailing-feedback { background: #284f46cc; border: 1px solid #e2edce30; padding: 11px 15px; border-radius: 10px; text-shadow: none; backdrop-filter: blur(8px); }
+.desktop-controls { color: #244a43; }
+.desktop-controls kbd { border-color: #244a4370; background: #f0f1db66; }
+@keyframes bob { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-6px); } }
+
+@media (min-width: 1600px) {
+  .intro { left: 6%; top: 18%; }
+  .intro-description { font-size: 14px; }
+  .intro-rule { margin-top: 45px; }
+  .instruments { width: 820px; }
+  .wind-panel { right: 40px; top: 32px; width: 240px; }
+  .compass { width: 170px; height: 170px; }
+  .camera-tools { right: 40px; top: 376px; }
+  .in-voyage .help-button { right: 40px; }
+  .in-voyage .camera-tools { top: 418px; }
+  .chart-panel { right: 40px; width: 270px; }
+}
+
+@media (max-height: 850px) and (min-width: 1001px) {
+  .ocean-stage { min-height: 610px; }
+  .intro { top: 14%; }
+  h1 { font-size: 56px; margin-bottom: 16px; }
+  .intro .eyebrow { margin-bottom: 15px; }
+  .intro-description { margin-bottom: 20px; font-size: 12px; }
+  .intro-rule { display: none; }
+  .wind-panel { padding: 15px 18px 12px; }
+  .compass { width: 130px; height: 130px; }
+  .camera-tools { top: 310px; }
+  .in-voyage .camera-tools { top: 358px; }
+  .sailing-feedback { bottom: 197px; }
+}
+
+@media (max-width: 1100px) {
+  .site-header { padding: 0 26px; gap: 24px; }
+  .edition { display: none; }
+  .intro { left: 4%; width: 370px; }
+  h1 { font-size: 55px; letter-spacing: -3px; }
+  .location-type, .location-divider { display: none; }
+  .instruments { width: calc(100% - 280px); left: 25px; }
+  .instrument { padding: 0 14px; }
+  .speed-instrument { width: 100px; }
+  .course-instrument { width: 92px; }
+  .chart-panel { width: 222px; right: 22px; }
+  .wind-panel { right: 22px; width: 205px; }
+  .camera-tools { right: 22px; }
+  .help-button { right: 26px; }
+  .in-voyage .help-button { right: 22px; }
+  .desktop-controls { left: 28px; gap: 9px; }
+  .sailing-feedback { left: 52%; }
+  [data-mode='ready'] .sailing-feedback { left: 57%; }
+}
+
+@media (max-width: 860px) {
+  #app { --header-height: 72px; }
+  .site-header { padding: 0 24px; }
+  .header-description { font-size: 8px; letter-spacing: 1.1px; gap: 10px; }
+  .brand { font-size: 29px; }
+  .ocean-stage { min-height: 700px; }
+  .intro { top: 15%; width: 340px; }
+  .intro-rule { margin-top: 27px; }
+  .instruments { bottom: 81px; left: 22px; right: 22px; width: auto; }
+  .speed-instrument { width: 18%; }
+  .course-instrument { width: 17%; }
+  .sail-instrument { flex: 1; }
+  .chart-panel { bottom: 230px; width: 184px; padding: 12px; }
+  .chart-panel .eyebrow { font-size: 6px; letter-spacing: 1px; }
+  .chart-footer { font-size: 6px; }
+  .wind-panel { width: 180px; padding: 15px; }
+  .wind-reading { gap: 9px; }
+  .wind-reading strong { font-size: 29px; }
+  .wind-reading .icon { width: 25px; }
+  .compass { width: 126px; height: 126px; }
+  .wind-caption { font-size: 7px; }
+  .camera-tools { top: 306px; }
+  .in-voyage .camera-tools { top: 354px; }
+  .desktop-controls { display: none; }
+  .touch-controls { position: absolute; display: flex; align-items: center; gap: 22px; bottom: 18px; left: 50%; transform: translateX(-50%); }
+  .touch-controls button { width: 64px; height: 46px; background: #f3f2e5e0; border: 1px solid #f5f5e780; border-radius: 9px; touch-action: none; user-select: none; }
+  .touch-controls button:last-child .icon { transform: rotate(180deg); }
+  .touch-controls button.held { background: #d9edaa; }
+  .touch-controls > span { font-size: 7px; color: #edf2e1; white-space: nowrap; letter-spacing: 1px; }
+  .sailing-feedback, [data-mode='ready'] .sailing-feedback { bottom: 231px; left: 36%; }
+  .voyage-panel { left: 24px; width: 245px; }
+  .session-controls { left: 24px; }
+}
+
+@media (max-width: 600px) {
+  #app { --header-height: 65px; }
+  .site-header { padding: 0 19px; }
+  .brand { font-size: 27px; gap: 8px; letter-spacing: -1.5px; }
+  .brand .icon { width: 28px; height: 31px; }
+  .header-description { display: none; }
+  .help-button { right: 19px; font-size: 10px; gap: 7px; padding-left: 13px; }
+  .header-actions { padding-right: 0; }
+  .in-voyage .help-button { right: 14px; }
+  .help-button .icon { width: 17px; height: 17px; }
+  .ocean-stage { min-height: 655px; }
+  .location { left: 20px; top: 19px; font-size: 7px; letter-spacing: 1.1px; gap: 8px; }
+  .live-dot { width: 4px; height: 4px; }
+  .intro { top: 68px; left: 24px; width: 300px; }
+  .intro .eyebrow { font-size: 7px; letter-spacing: 1.5px; margin-bottom: 11px; }
+  h1 { font-size: 43px; letter-spacing: -2.5px; line-height: 1.07; margin-bottom: 15px; }
+  h1 > span { display: block; letter-spacing: -1.8px; }
+  .intro-description { display: none; }
+  .intro .primary-button { min-height: 44px; font-size: 10px; padding: 12px 16px; gap: 22px; border-radius: 6px; }
+  .intro .primary-button .icon { width: 17px; height: 17px; }
+  .intro-meta { font-size: 7px; gap: 10px; margin-top: 10px; }
+  .intro-meta > span + span:before { margin-right: 2px; }
+  .intro-rule { display: none; }
+  .wind-panel { right: 14px; top: 49px; width: 105px; padding: 11px 9px 9px; border-radius: 10px; }
+  .wind-panel .panel-heading { display: none; }
+  .wind-reading { gap: 5px; margin: 1px 0 7px; justify-content: center; }
+  .wind-reading .icon { width: 17px; height: 19px; }
+  .wind-reading strong { font-size: 23px; letter-spacing: -1px; }
+  .wind-reading > span { font-size: 7px; }
+  .wind-description { display: none; }
+  .compass { width: 79px; height: 79px; margin: 3px auto 4px; }
+  .compass-dial text { font-size: 12px; }
+  .wind-caption { display: block; font-size: 6px; padding-top: 5px; }
+  .wind-caption .wind-arrow { font-size: 10px; margin-right: 2px; }
+  .camera-tools { top: 220px; right: 16px; gap: 7px; flex-direction: column; }
+  .in-voyage .wind-panel { top: 70px; }
+  .in-voyage .camera-tools { top: 241px; }
+  .camera-tools .round-button { width: 32px; height: 32px; }
+  .camera-tools .icon { width: 15px; height: 15px; }
+  .scene-vignette { background: linear-gradient(120deg, #e1eadbe6 0%, #d8e7d75c 37%, transparent 59%); }
+  .chart-panel { bottom: 328px; left: 14px; right: auto; width: 135px; padding: 9px; border-radius: 8px; }
+  .chart-panel .eyebrow { font-size: 5px; letter-spacing: 0.7px; }
+  .chart-panel .panel-heading .icon { width: 11px; height: 11px; }
+  #chart { margin: 5px 0 2px; }
+  .chart-footer { font-size: 6px; padding-top: 5px; }
+  [data-mode='ready'] .chart-panel { display: none; }
+  .instruments { bottom: 77px; left: 14px; right: 14px; height: 160px; padding: 10px 0; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 40px 1fr; }
+  .instrument { padding: 0 12px; }
+  .speed-instrument, .course-instrument { width: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .instrument .eyebrow { font-size: 8px; letter-spacing: 0.7px; }
+  .instrument-value { gap: 4px; margin: 0; }
+  .instrument-value strong { font-size: 25px; letter-spacing: -1.5px; }
+  .instrument-value > span { font-size: 9px; }
+  .speed-bars, .instrument-note { display: none; }
+  .sail-instrument { border-top: 1px solid var(--line); padding-top: 10px; }
+  .sail-instrument[data-sail='main'] { border-left: 0; }
+  .sail-heading { margin-bottom: 4px; }
+  .sail-heading strong { font-size: 12px; }
+  input[type='range'] { height: 22px; }
+  .trim-labels { font-size: 7px; margin-top: 2px; }
+  .trim-labels kbd { display: none; }
+  .power-label { font-size: 7px; gap: 4px; margin-top: 6px; }
+  .power-label strong { font-size: 8px; }
+  .power-dot { width: 3px; height: 3px; }
+  .touch-controls { bottom: 17px; gap: 17px; }
+  .touch-controls button { width: 60px; height: 43px; }
+  .touch-controls > span { font-size: 6px; letter-spacing: 0.7px; }
+  .touch-controls > span { color: #244a43; }
+  .sailing-feedback, [data-mode='ready'] .sailing-feedback { left: 50%; bottom: 255px; gap: 8px; width: max-content; max-width: calc(100% - 32px); white-space: normal; }
+  .sailing-feedback strong { font-size: 10px; }
+  .sailing-feedback div > span { font-size: 7px; margin-top: 3px; }
+  .feedback-symbol { width: 29px; height: 29px; flex-shrink: 0; }
+  .feedback-symbol .icon { width: 16px; height: 16px; }
+  .voyage-panel { top: 49px; left: 14px; width: calc(100% - 145px); max-width: 245px; padding: 13px; border-radius: 10px; }
+  .voyage-panel .eyebrow { font-size: 6px; letter-spacing: 0.5px; }
+  .voyage-panel h2 { font-size: 17px; margin: 10px 0 5px; }
+  .voyage-panel p { font-size: 7px; }
+  .voyage-panel .panel-heading .icon { width: 13px; height: 13px; }
+  .route-progress { margin: 14px 0 10px; }
+  .route-progress > span { width: 23px; height: 23px; font-size: 7px; }
+  .voyage-stats { font-size: 8px; }
+  .session-controls { top: 220px; left: 15px; }
+  .session-controls .round-button { width: 35px; height: 33px; }
+  .state-card { padding: 27px 22px; }
+  .state-card h2 { font-size: 27px; }
+  .state-card p { font-size: 11px; }
+  .state-card .eyebrow { font-size: 6px; }
+  .finish-stats strong { font-size: 16px; }
+  .finish-stats span { font-size: 7px; }
+  .dialog-inner { padding: 28px 23px; }
+  .dialog-inner > .eyebrow { font-size: 7px; }
+  .dialog-inner > h2 { font-size: 28px; }
+  .help-steps { gap: 19px; }
+}
+
+@media (max-width: 600px) and (max-height: 800px) {
+  .session-controls { top: 7px; left: auto; right: 14px; }
+  .in-voyage .session-controls { top: 14px; left: 14px; right: auto; }
+  .in-voyage .location { display: none; }
+}
+
+@media (pointer: coarse) and (min-width: 861px) {
+  .desktop-controls { display: none; }
+  .instruments { bottom: 81px; }
+  .touch-controls { position: absolute; display: flex; align-items: center; gap: 22px; bottom: 18px; left: 330px; transform: translateX(-50%); }
+  .touch-controls button { width: 64px; height: 46px; background: #f3f2e5e0; border: 1px solid #f5f5e780; border-radius: 9px; touch-action: none; user-select: none; }
+  .touch-controls button:last-child .icon { transform: rotate(180deg); }
+  .touch-controls button.held { background: #d9edaa; }
+  .touch-controls > span { font-size: 7px; color: #244a43; white-space: nowrap; letter-spacing: 1px; }
+}
+
+@media (max-width: 380px) {
+  .intro { left: 20px; width: 270px; }
+  h1 { font-size: 38px; }
+  .wind-panel { width: 92px; right: 12px; }
+  .compass { width: 70px; height: 70px; }
+  .instrument { padding: 0 9px; }
+  .instrument-value strong { font-size: 26px; }
+  .power-label { gap: 3px; font-size: 5.5px; }
+  .touch-controls { gap: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
