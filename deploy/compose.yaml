@@ -1,0 +1,26 @@
+name: sailwind
+
+services:
+  web:
+    image: sailwind:bundle-fa7fb53be814
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    networks: [frontend]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+
+networks:
+  frontend:
+    name: sailwind-frontend
+    internal: true

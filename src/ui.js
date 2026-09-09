@@ -101,7 +101,16 @@ export function mountUI(root) {
         <div class="state-card"><span class="state-icon">${icon('sail')}</span><span class="eyebrow" id="state-eyebrow">МОЖНО НЕ СПЕШИТЬ</span><h2 id="state-title">На тихой воде</h2><p id="state-description">Ветер подождёт. Продолжим, когда будешь готов.</p><div id="finish-stats" class="finish-stats" hidden></div><button id="resume-button" class="primary-button">Продолжить ${icon('play')}</button></div>
       </section>
       <div id="error-message" class="error-message" role="alert" hidden></div>
-      <div id="loading" class="loading"><span class="loading-sail">${icon('sail')}</span><span>Готовим яхту к выходу…</span></div>
+      <section id="loading" class="loading" aria-labelledby="loading-title">
+        <div class="loading-card">
+          <span class="eyebrow">ПЕРЕД ВЫХОДОМ В МОРЕ</span>
+          <div class="loading-horizon" aria-hidden="true"><span class="loading-sail">${icon('sail')}</span></div>
+          <h2 id="loading-title">Ловим первый ветер.</h2>
+          <div class="loading-caption"><span id="loading-status" role="status">Готовим яхту к выходу</span><span id="loading-count">0 / 8</span></div>
+          <progress id="loading-progress" max="8" value="0" aria-label="Подготовка игры"></progress>
+          <p>Готовим море и отражения на твоём устройстве.<br>В первый раз это может занять немного времени.</p>
+        </div>
+      </section>
     </main>
 
 
@@ -134,6 +143,13 @@ export function mountUI(root) {
 
 export function formatTime(seconds) {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+}
+
+export function updateLoading(refs, completed, label) {
+  refs['loading-progress'].value = completed;
+  refs['loading-progress'].setAttribute('aria-valuetext', `${label}. Завершено этапов: ${completed} из 8`);
+  refs['loading-status'].textContent = label;
+  refs['loading-count'].textContent = `${completed} / 8`;
 }
 
 function drawChart(refs, game) {

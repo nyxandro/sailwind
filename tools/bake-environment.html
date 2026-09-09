@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Sailwind environment baker</title></head>
+  <body>
+    <h1>Sailwind environment baker</h1>
+    <p id="status">Generating the fixed sky with Three.js 0.185.1...</p>
+    <a id="download" hidden download="environment.exr">Download environment.exr</a>
+    <script type="module">
+      import * as THREE from 'three';
+      import { Sky } from 'three/addons/objects/Sky.js';
+      import { EXRExporter } from 'three/addons/exporters/EXRExporter.js';
+      import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
+
+      const renderer = new THREE.WebGLRenderer();
+      const sky = new Sky();
+      sky.scale.setScalar(4000);
+      const uniforms = sky.material.uniforms;
+      uniforms.sunPosition.value.set(-65, 100, -50).normalize();
+      uniforms.turbidity.value = 2;
+      uniforms.rayleigh.value = 1.5;
+      uniforms.cloudCoverage.value = 0.3;
+      uniforms.cloudDensity.value = 0.25;
+      uniforms.showSunDisc.value = false;
+      const scene = new THREE.Scene();
+      scene.add(sky);
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      let target;
+      try {
+        target = pmrem.fromScene(scene, 0.025, 0.1, 10000);
+        const data = await new EXRExporter().parse(renderer, target);
+        const decoded = new EXRLoader().parse(data.buffer);
+        const original = await renderer.readRenderTargetPixelsAsync(target, 0, 0, target.width, target.height, new Uint16Array(target.width * target.height * 4));
+        let directErrors = 0;
+        let flippedErrors = 0;
+        for (let y = 0; y < target.height; y++) {
+          for (let x = 0; x < target.width * 4; x++) {
+            const i = y * target.width * 4 + x;
+            if (original[i] !== decoded.data[i]) directErrors++;
+            if (original[i] !== decoded.data[(target.height - 1 - y) * target.width * 4 + x]) flippedErrors++;
+          }
+        }
+        if (directErrors !== 0 && flippedErrors !== 0) throw new Error('ENVIRONMENT_EXPORT_FAILED: EXR round trip changed sky pixels');
+        const download = document.querySelector('#download');
+        download.href = URL.createObjectURL(new Blob([data], { type: 'image/x-exr' }));
+        download.hidden = false;
+        document.querySelector('#status').textContent = JSON.stringify({ width: target.width, height: target.height, bytes: data.length, directErrors, flippedErrors });
+      } catch (cause) {
+        console.error('ENVIRONMENT_EXPORT_FAILED', cause);
+        document.querySelector('#status').textContent = `ENVIRONMENT_EXPORT_FAILED: ${cause.message}`;
+      } finally {
+        target?.dispose();
+        pmrem.dispose();
+        sky.geometry.dispose();
+        sky.material.dispose();
+        renderer.dispose();
+      }
+    </script>
+  </body>
+</html>

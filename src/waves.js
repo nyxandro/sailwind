@@ -1,4 +1,4 @@
-import { BASE_CURRENT, currentAt, currentShader, waveExposure } from './currents.js';
+import { BASE_CURRENT, currentAt, waveExposure } from './currents.js';
 import { YACHT_PHYSICS } from './motion.js';
 
 export const WAVES = [
@@ -66,30 +66,3 @@ export function applyBuoyancy(boat, x, z, heading, time, heel, heightAt, state, 
   boat.position.set(x, state.height, z);
   boat.rotation.set(state.pitch, -heading, state.roll, 'YXZ');
 }
-
-// GPU geometry and CPU buoyancy share coefficients rather than separate approximations.
-export const waveShader = `
-  uniform float oceanTime;
-  ${currentShader}
-  float oceanHeight(vec2 p) {
-    float height = 0.0;
-    vec2 flow = oceanCurrent(p);
-    ${WAVES.map((wave) => {
-      const k = 2 * Math.PI / wave.wavelength;
-      const f = (n) => n.toFixed(9);
-      return `{
-        vec2 direction = vec2(${f(wave.x)}, ${f(wave.z)});
-        vec2 baseCurrent = vec2(${f(BASE_CURRENT.x)}, ${f(BASE_CURRENT.z)});
-        float localWarp = dot(flow - baseCurrent, direction) * ${f(CURRENT_WARP_SECONDS)};
-        float phase = ${f(k)} * (dot(direction, p) - localWarp) - (${f(Math.sqrt(9.81 * k))} + ${f(k)} * dot(baseCurrent, direction)) * oceanTime + ${f(wave.phase)};
-        height += ${f(wave.amplitude)} * oceanExposure(p, direction) * sin(phase);
-      }`;
-    }).join('\n')}
-    return height;
-  }
-  vec3 oceanSurface(vec2 p) {
-    return vec3(oceanHeight(p),
-      (oceanHeight(p + vec2(0.01, 0.0)) - oceanHeight(p - vec2(0.01, 0.0))) / 0.02,
-      (oceanHeight(p + vec2(0.0, 0.01)) - oceanHeight(p - vec2(0.0, 0.01))) / 0.02);
-  }
-`;

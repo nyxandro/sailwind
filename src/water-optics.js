@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { Refractor } from 'three/addons/objects/Refractor.js';
 import { SURFACE_EFFECT_LAYER } from './world.js';
+import { prepareShaders } from './scene-startup.js';
 
 const REFLECTION_MAX_SIZE = 512;
 const REFRACTION_MAX_SIZE = 2048;
@@ -28,6 +29,20 @@ export function createWaterOptics(renderer) {
 
   return {
     uniforms,
+    async prepare(scene, camera, signal, pause, clock) {
+      const target = renderer.getRenderTarget();
+      const face = renderer.getActiveCubeFace();
+      const mip = renderer.getActiveMipmapLevel();
+      const toneMapping = renderer.toneMapping;
+      try {
+        renderer.toneMapping = THREE.NoToneMapping;
+        renderer.setRenderTarget(refraction.getRenderTarget());
+        await prepareShaders(renderer, scene, camera, signal, pause, clock);
+      } finally {
+        renderer.toneMapping = toneMapping;
+        renderer.setRenderTarget(target, face, mip);
+      }
+    },
     render(scene, camera, surface) {
       renderer.getDrawingBufferSize(size);
       // Fine underwater edges need display resolution; distorted reflections can stay cheaper.

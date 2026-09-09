@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Ocean field GPU contract test</title></head><body>
+<pre id="result">Running...</pre>
+<script type="module">
+  import * as THREE from 'three';
+  import { createOceanField, createOceanClock, evaluateOceanCoefficients, oceanFieldShader, OCEAN_FIELD_STRIDE } from './ocean-field.js';
+  import { COARSE_OCEAN_COORDINATES, OCEAN_COORDINATES, OCEAN_HALF_SIZE, OCEAN_DETAIL_RADIUS } from './ocean-grid.js';
+  import { createOceanPatch, oceanDetailWeight } from './ocean-patch.js';
+
+  const coordinates = [-120, -80, -33, -15, 0, 24, 80, 120];
+  const count = coordinates.length ** 2;
+  const renderer = new THREE.WebGLRenderer();
+  const target = new THREE.WebGLRenderTarget(count, 1, { type: THREE.FloatType, depthBuffer: false });
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) positions[i * 3] = (i + 0.5) / count * 2 - 1;
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const samples = new Float32Array(count * 2);
+  for (let i = 0; i < count; i++) {
+    samples[i * 2] = coordinates[i % coordinates.length];
+    samples[i * 2 + 1] = coordinates[Math.floor(i / coordinates.length)];
+  }
+  geometry.setAttribute('samplePosition', new THREE.BufferAttribute(samples, 2));
+  const detail = { x: 4, z: 0, radius: OCEAN_DETAIL_RADIUS };
+  const uniforms = {
+    oceanSinTime: { value: new THREE.Vector4() }, oceanCosTime: { value: new THREE.Vector4() },
+    oceanDetailCenter: { value: new THREE.Vector2(detail.x, detail.z) },
+    oceanDetailRadius: { value: detail.radius },
+  };
+  const material = new THREE.ShaderMaterial({
+    uniforms, toneMapped: false, depthTest: false, depthWrite: false,
+    vertexShader: oceanFieldShader + `attribute vec2 samplePosition; varying vec3 result; void main() { result = oceanSurface(samplePosition); gl_PointSize = 1.0; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `varying vec3 result; void main() { gl_FragColor = vec4(result, 1.0); }`,
+  });
+  const scene = new THREE.Scene();
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  scene.add(points);
+  let maxError = 0;
+  let maxPatchDelta = 0;
+  const baseline = new Map();
+  try {
+    const coarseField = createOceanField(COARSE_OCEAN_COORDINATES, 0, 0);
+    let previous = null;
+    for (const [x, z] of [[0, 0], [8, 0], [8, -8], [-8, 8]]) {
+      const patch = createOceanPatch(coarseField, x, z, previous);
+      previous = patch;
+      const fields = [patch.field, patch.coarseSamples].map((source) => {
+        const data = new Float32Array(count * OCEAN_FIELD_STRIDE);
+        for (let i = 0; i < count; i++) {
+          const col = samples[i * 2] - x + OCEAN_HALF_SIZE;
+          const row = samples[i * 2 + 1] - z + OCEAN_HALF_SIZE;
+          const offset = (row * OCEAN_COORDINATES.length + col) * OCEAN_FIELD_STRIDE;
+          data.set(source.subarray(offset, offset + OCEAN_FIELD_STRIDE), i * OCEAN_FIELD_STRIDE);
+        }
+        return data;
+      });
+      for (const [index, prefix] of ['ocean', 'oceanCoarse'].entries()) {
+        const buffer = new THREE.InterleavedBuffer(fields[index], OCEAN_FIELD_STRIDE);
+        for (const [i, name] of ['HeightSin', 'HeightCos', 'SlopeXSin', 'SlopeXCos', 'SlopeZSin', 'SlopeZCos'].entries()) {
+          geometry.setAttribute(`${prefix}${name}`, new THREE.InterleavedBufferAttribute(buffer, 4, i * 4));
+        }
+      }
+      for (const time of [0, 17.3, 7200]) {
+        const clock = createOceanClock(time);
+        uniforms.oceanSinTime.value.fromArray(clock.sin);
+        uniforms.oceanCosTime.value.fromArray(clock.cos);
+        renderer.setRenderTarget(target);
+        renderer.render(scene, new THREE.Camera());
+        const actual = await renderer.readRenderTargetPixelsAsync(target, 0, 0, count, 1, new Float32Array(count * 4));
+        for (let i = 0; i < count; i++) {
+          const fine = evaluateOceanCoefficients(fields[0], i, clock);
+          const coarse = evaluateOceanCoefficients(fields[1], i, clock);
+          const weight = oceanDetailWeight(samples[i * 2], samples[i * 2 + 1], detail);
+          for (const [axis, key] of ['height', 'slopeX', 'slopeZ'].entries()) {
+            const expected = coarse[key] * (1 - weight) + fine[key] * weight;
+            maxError = Math.max(maxError, Math.abs(actual[i * 4 + axis] - expected));
+            if (baseline.has(time)) maxPatchDelta = Math.max(maxPatchDelta, Math.abs(actual[i * 4 + axis] - baseline.get(time)[i * 4 + axis]));
+          }
+        }
+        if (!baseline.has(time)) baseline.set(time, actual);
+      }
+      geometry.dispose();
+    }
+    if (maxError > 0.00001) throw new Error(`OCEAN_GPU_CONTRACT_FAILED: Maximum error ${maxError}`);
+    if (maxPatchDelta > 0.0000001) throw new Error(`OCEAN_PATCH_CHANGED_WAVES: Maximum patch change ${maxPatchDelta}`);
+    document.querySelector('#result').textContent = JSON.stringify({ passed: true, samples: count * 12, maxError, maxPatchDelta });
+  } catch (cause) {
+    console.error(cause);
+    document.querySelector('#result').textContent = JSON.stringify({ passed: false, message: cause.message });
+  } finally {
+    geometry.dispose();
+    material.dispose();
+    target.dispose();
+    renderer.dispose();
+  }
+</script></body></html>

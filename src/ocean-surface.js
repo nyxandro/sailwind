@@ -1,47 +1,50 @@
 import * as THREE from 'three';
-import { waveHeight } from './waves.js';
+import { WAVES } from './waves.js';
+import { OCEAN_COORDINATES, COARSE_OCEAN_COORDINATES, OCEAN_HALF_SIZE, oceanTriangle } from './ocean-grid.js';
 
-const SEGMENTS = 128;
-const COORDINATES = Float32Array.from({ length: SEGMENTS + 1 }, (_, i) => {
-  const n = -1 + i * 2 / SEGMENTS;
-  return n * 45 + n ** 3 * 1400;
-});
-
-export function createOceanGeometry() {
+export function createOceanGeometry(coordinates = OCEAN_COORDINATES) {
+  const SEGMENTS = coordinates.length - 1;
   const geometry = new THREE.PlaneGeometry(2, 2, SEGMENTS, SEGMENTS);
   geometry.rotateX(-Math.PI / 2);
   const position = geometry.attributes.position;
   for (let row = 0; row <= SEGMENTS; row++) {
-    for (let col = 0; col <= SEGMENTS; col++) position.setXYZ(row * (SEGMENTS + 1) + col, COORDINATES[col], 0, COORDINATES[row]);
+    for (let col = 0; col <= SEGMENTS; col++) position.setXYZ(row * (SEGMENTS + 1) + col, coordinates[col], 0, coordinates[row]);
   }
   geometry.computeBoundingSphere();
+  // CPU positions are flat; include the displacement performed by the shader.
+  geometry.boundingSphere.radius += WAVES.reduce((height, wave) => height + wave.amplitude, 0);
   return geometry;
 }
 
-function cellAt(value) {
-  if (value < COORDINATES[0] || value > COORDINATES[SEGMENTS]) throw new Error('OCEAN_SAMPLE_OUT_OF_RANGE: Floating object is outside the water mesh');
-  let low = 0;
-  let high = SEGMENTS;
-  while (high - low > 1) {
-    const mid = (low + high) >> 1;
-    if (COORDINATES[mid] <= value) low = mid;
-    else high = mid;
-  }
-  return low;
+export function sampleOceanHeight(x, z, anchorX, anchorZ, sample, coordinates = OCEAN_COORDINATES) {
+  const { vertices, weights } = oceanTriangle(coordinates, x - anchorX, z - anchorZ);
+  return vertices.reduce((height, vertex, i) => height + sample(vertex) * weights[i], 0);
 }
 
-export function sampleOceanHeight(x, z, time, anchorX, anchorZ) {
-  const col = cellAt(x - anchorX);
-  const row = cellAt(z - anchorZ);
-  const x0 = COORDINATES[col] + anchorX;
-  const x1 = COORDINATES[col + 1] + anchorX;
-  const z0 = COORDINATES[row] + anchorZ;
-  const z1 = COORDINATES[row + 1] + anchorZ;
-  const u = (x - x0) / (x1 - x0);
-  const v = (z - z0) / (z1 - z0);
-  const b = waveHeight(x0, z1, time);
-  const d = waveHeight(x1, z0, time);
-  // Match PlaneGeometry's actual triangle diagonal, not the continuous wave above it.
-  if (u + v <= 1) return waveHeight(x0, z0, time) * (1 - u - v) + b * v + d * u;
-  return b * (1 - u) + d * (1 - v) + waveHeight(x1, z1, time) * (u + v - 1);
+export function createFarOceanIndices(x, z) {
+  const coordinates = COARSE_OCEAN_COORDINATES;
+  const lowX = coordinates.indexOf(x - OCEAN_HALF_SIZE);
+  const highX = coordinates.indexOf(x + OCEAN_HALF_SIZE);
+  const lowZ = coordinates.indexOf(z - OCEAN_HALF_SIZE);
+  const highZ = coordinates.indexOf(z + OCEAN_HALF_SIZE);
+  if ([lowX, highX, lowZ, highZ].some((i) => i < 0))
+    throw new Error('OCEAN_PATCH_ALIGNMENT_FAILED: Near water must align with the far-water grid');
+  const side = coordinates.length;
+  const cells = (side - 1) ** 2 - (highX - lowX) * (highZ - lowZ);
+  const indices = new Uint32Array(cells * 6);
+  let offset = 0;
+  for (let row = 0; row < side - 1; row++) {
+    for (let col = 0; col < side - 1; col++) {
+      if (row >= lowZ && row < highZ && col >= lowX && col < highX) continue;
+      const a = row * side + col;
+      const b = a + side;
+      indices[offset++] = a;
+      indices[offset++] = b;
+      indices[offset++] = a + 1;
+      indices[offset++] = b;
+      indices[offset++] = b + 1;
+      indices[offset++] = a + 1;
+    }
+  }
+  return indices;
 }

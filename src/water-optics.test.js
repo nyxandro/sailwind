@@ -1,8 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACESFilmicToneMapping, Matrix4, Mesh, NoToneMapping, PerspectiveCamera, Scene, Vector3, Vector4, WebGLRenderTarget } from 'three';
+import {
+  ACESFilmicToneMapping,
+  Group,
+  Matrix4,
+  Mesh,
+  NoToneMapping,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  Vector4,
+  WebGLRenderTarget,
+} from 'three';
 import { createWaterOptics } from './water-optics.js';
 import { SURFACE_EFFECT_LAYER } from './world.js';
+
+test('preparing offscreen programs restores the target and tone mapping when compilation fails', async (t) => {
+  const { optics, renderer, originalTarget } = setup(t);
+  const failure = new Error('test compile failure');
+  renderer.compile = () => {
+    assert.equal(renderer.toneMapping, NoToneMapping);
+    assert.notEqual(renderer.target, originalTarget);
+    throw failure;
+  };
+  await assert.rejects(
+    optics.prepare(
+      new Scene(),
+      new PerspectiveCamera(),
+      new AbortController().signal,
+      async () => {},
+      () => performance.now(),
+    ),
+    (cause) => cause === failure,
+  );
+  assert.equal(renderer.target, originalTarget);
+  assert.equal(renderer.face, 2);
+  assert.equal(renderer.mip, 1);
+  assert.equal(renderer.toneMapping, ACESFilmicToneMapping);
+});
 
 function setup(t) {
   const scene = new Scene();
@@ -13,24 +48,49 @@ function setup(t) {
   const activeViewport = originalTarget.viewport.clone();
   const calls = [];
   const renderer = {
-    xr: { enabled: true }, shadowMap: { autoUpdate: true },
-    toneMapping: ACESFilmicToneMapping, autoClear: true,
-    target: originalTarget, face: 2, mip: 1, viewport: viewport.clone(),
-    currentViewport: activeViewport.clone(), gpuViewport: activeViewport.clone(),
-    state: { buffers: { depth: { setMask() {} } }, viewport(value) { renderer.gpuViewport.copy(value); } },
-    getDrawingBufferSize(out) { return out.set(1280, 850); },
-    getRenderTarget() { return this.target; },
-    getActiveCubeFace() { return this.face; },
-    getActiveMipmapLevel() { return this.mip; },
-    getViewport(out) { return out.copy(this.viewport); },
-    getCurrentViewport(out) { return out.copy(this.currentViewport); },
+    xr: { enabled: true },
+    shadowMap: { autoUpdate: true },
+    toneMapping: ACESFilmicToneMapping,
+    autoClear: true,
+    target: originalTarget,
+    face: 2,
+    mip: 1,
+    viewport: viewport.clone(),
+    currentViewport: activeViewport.clone(),
+    gpuViewport: activeViewport.clone(),
+    state: {
+      buffers: { depth: { setMask() {} } },
+      viewport(value) {
+        renderer.gpuViewport.copy(value);
+      },
+    },
+    getDrawingBufferSize(out) {
+      return out.set(1280, 850);
+    },
+    getRenderTarget() {
+      return this.target;
+    },
+    getActiveCubeFace() {
+      return this.face;
+    },
+    getActiveMipmapLevel() {
+      return this.mip;
+    },
+    getViewport(out) {
+      return out.copy(this.viewport);
+    },
+    getCurrentViewport(out) {
+      return out.copy(this.currentViewport);
+    },
     setViewport(value) {
       this.viewport.copy(value);
       this.currentViewport.copy(value).multiplyScalar(1.75).round();
       this.state.viewport(this.currentViewport);
     },
     setRenderTarget(target, face = 0, mip = 0) {
-      this.target = target; this.face = face; this.mip = mip;
+      this.target = target;
+      this.face = face;
+      this.mip = mip;
       if (target) this.currentViewport.copy(target.viewport);
       else this.currentViewport.copy(this.viewport).multiplyScalar(1.75).floor();
       this.state.viewport(this.currentViewport);
@@ -42,7 +102,12 @@ function setup(t) {
     },
   };
   const optics = createWaterOptics(renderer);
-  t.after(() => { optics.dispose(); originalTarget.dispose(); surface.geometry.dispose(); surface.material.dispose(); });
+  t.after(() => {
+    optics.dispose();
+    originalTarget.dispose();
+    surface.geometry.dispose();
+    surface.material.dispose();
+  });
   return { scene, surface, renderer, optics, calls, originalTarget, viewport, activeViewport };
 }
 
@@ -63,9 +128,36 @@ test('reflection uses a mirrored eye and direction, not a copy of the overhead v
     const projection = new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     const expectedUV = new Vector4(0, 0, 0, 1).applyMatrix4(projection);
     const actualUV = new Vector4(0, 0, 0, 1).applyMatrix4(optics.uniforms.waterReflectionMatrix.value);
-    assert.ok(Math.abs(actualUV.x / actualUV.w - (expectedUV.x / expectedUV.w * 0.5 + 0.5)) < 1e-8);
-    assert.ok(Math.abs(actualUV.y / actualUV.w - (expectedUV.y / expectedUV.w * 0.5 + 0.5)) < 1e-8);
+    assert.ok(Math.abs(actualUV.x / actualUV.w - ((expectedUV.x / expectedUV.w) * 0.5 + 0.5)) < 1e-8);
+    assert.ok(Math.abs(actualUV.y / actualUV.w - ((expectedUV.y / expectedUV.w) * 0.5 + 0.5)) < 1e-8);
   }
+});
+
+test('both water meshes are excluded from reflection and refraction together', (t) => {
+  const { scene, surface, renderer, optics } = setup(t);
+  const water = new Group();
+  const far = new Mesh();
+  t.after(() => {
+    far.geometry.dispose();
+    far.material.dispose();
+  });
+  water.add(surface, far);
+  scene.add(water);
+  let renders = 0;
+  renderer.render = () => {
+    assert.equal(water.visible, false);
+    const visible = [];
+    scene.traverseVisible((object) => visible.push(object));
+    assert.ok(!visible.includes(surface) && !visible.includes(far));
+    renders++;
+  };
+  const camera = new PerspectiveCamera();
+  camera.position.set(0, 28, 40);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  optics.render(scene, camera, water);
+  assert.equal(renders, 2);
+  assert.equal(water.visible, true);
 });
 
 test('the underwater pass excludes the deck, while the reflection excludes the seabed', (t) => {
@@ -80,7 +172,8 @@ test('the underwater pass excludes the deck, while the reflection excludes the s
   assert.equal(camera.layers.isEnabled(SURFACE_EFFECT_LAYER), true);
   assert.equal(reflection.camera.layers.isEnabled(SURFACE_EFFECT_LAYER), false);
   assert.equal(refraction.camera.layers.isEnabled(SURFACE_EFFECT_LAYER), false);
-  const projectZ = (position, view) => position.clone().applyMatrix4(new Matrix4().multiplyMatrices(view.projectionMatrix, view.matrixWorldInverse)).z;
+  const projectZ = (position, view) =>
+    position.clone().applyMatrix4(new Matrix4().multiplyMatrices(view.projectionMatrix, view.matrixWorldInverse)).z;
   assert.ok(projectZ(new Vector3(0, 3, 0), reflection.camera) > -1);
   assert.ok(projectZ(new Vector3(0, -6, 0), reflection.camera) < -1);
   assert.ok(projectZ(new Vector3(0, 3, 0), refraction.camera) < -1);
@@ -99,8 +192,13 @@ test('offscreen passes restore renderer state and visibility even when rendering
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
   const failure = new Error('test render failure');
-  renderer.render = () => { throw failure; };
-  assert.throws(() => optics.render(scene, camera, surface), (error) => error === failure);
+  renderer.render = () => {
+    throw failure;
+  };
+  assert.throws(
+    () => optics.render(scene, camera, surface),
+    (error) => error === failure,
+  );
   assert.equal(surface.visible, true);
   assert.equal(renderer.target, originalTarget);
   assert.equal(renderer.face, 2);
@@ -129,7 +227,11 @@ test('underwater resolution follows device pixels independently from the cheaper
   camera.position.set(0, 28, 40);
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  for (const [width, height, underwaterWidth, underwaterHeight] of [[3840, 2160, 2048, 1152], [780, 1688, 780, 1688], [390, 844, 390, 844]]) {
+  for (const [width, height, underwaterWidth, underwaterHeight] of [
+    [3840, 2160, 2048, 1152],
+    [780, 1688, 780, 1688],
+    [390, 844, 390, 844],
+  ]) {
     renderer.getDrawingBufferSize = (out) => out.set(width, height);
     optics.render(scene, camera, surface);
     const reflection = calls.at(-2).target;

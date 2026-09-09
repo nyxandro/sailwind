@@ -3,20 +3,40 @@ import assert from 'node:assert/strict';
 import { Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
 import { createOceanGeometry, sampleOceanHeight } from './ocean-surface.js';
 import { sampleWaves, applyBuoyancy, createBuoyancyState } from './waves.js';
+import { createOceanField, evaluateOceanField } from './ocean-field.js';
+import { COARSE_OCEAN_COORDINATES } from './ocean-grid.js';
 
 test('floating objects sample the actual water triangles, including distant buoys', () => {
-  const geometry = createOceanGeometry();
+  const geometry = createOceanGeometry(COARSE_OCEAN_COORDINATES);
   const mesh = new Mesh(geometry, new MeshBasicMaterial());
   const positions = geometry.attributes.position;
   const time = 4.5;
-  for (const [anchorX, anchorZ] of [[0, 0], [48, -24]]) {
-    for (let i = 0; i < positions.count; i++) positions.setY(i, sampleWaves(positions.getX(i) + anchorX, positions.getZ(i) + anchorZ, time).height);
+  for (const [anchorX, anchorZ] of [
+    [0, 0],
+    [48, -24],
+  ]) {
+    const field = createOceanField(COARSE_OCEAN_COORDINATES, anchorX, anchorZ);
+    for (let i = 0; i < positions.count; i++)
+      positions.setY(i, sampleWaves(positions.getX(i) + anchorX, positions.getZ(i) + anchorZ, time).height);
     mesh.position.set(anchorX, 0, anchorZ);
     mesh.updateMatrixWorld();
-    for (const [x, z] of [[0.2, 0.3], [55, -120], [165, -240], [280, -150]]) {
+    for (const [x, z] of [
+      [0.2, 0.3],
+      [55, -120],
+      [165, -240],
+      [280, -150],
+    ]) {
       const hit = new Raycaster(new Vector3(x, 4, z), new Vector3(0, -1, 0)).intersectObject(mesh)[0];
       assert.ok(hit);
-      assert.ok(Math.abs(sampleOceanHeight(x, z, time, anchorX, anchorZ) - hit.point.y) < 1e-5);
+      const height = sampleOceanHeight(
+        x,
+        z,
+        anchorX,
+        anchorZ,
+        (vertex) => evaluateOceanField(field, vertex, time).height,
+        COARSE_OCEAN_COORDINATES,
+      );
+      assert.ok(Math.abs(height - hit.point.y) < 1e-5);
     }
   }
   geometry.dispose();
@@ -30,7 +50,8 @@ test('the yacht pitches towards the wave crest at all four headings', () => {
     applyBuoyancy(boat, 0, 0, heading, 0, 0, heightAt, createBuoyancyState(), 0.1);
     boat.updateMatrixWorld();
     const actual = boat.localToWorld(new Vector3(0, 0, -4)).y - boat.localToWorld(new Vector3(0, 0, 4)).y;
-    const expected = heightAt(Math.sin(heading) * 4, -Math.cos(heading) * 4, 0) - heightAt(-Math.sin(heading) * 4, Math.cos(heading) * 4, 0);
+    const expected =
+      heightAt(Math.sin(heading) * 4, -Math.cos(heading) * 4, 0) - heightAt(-Math.sin(heading) * 4, Math.cos(heading) * 4, 0);
     assert.equal(Math.sign(actual), Math.sign(expected));
     assert.ok(Math.abs(actual - expected * 0.5) < 0.02);
   }
@@ -59,13 +80,13 @@ test('steady wind heel is visible without increasing wave-driven rocking', () =>
   const boat = new Mesh();
   const state = createBuoyancyState();
   applyBuoyancy(boat, 0, 0, 0, 0, 0, () => 0, state, 0.1);
-  const heel = 19 * Math.PI / 180;
+  const heel = (19 * Math.PI) / 180;
   for (let i = 0; i < 80; i++) applyBuoyancy(boat, 0, 0, 0, i * 0.1, heel, () => 0, state, 0.1);
   assert.ok(Math.abs(boat.rotation.z - heel) < 0.01);
   assert.equal(boat.rotation.x, 0);
   assert.equal(boat.position.y, 0);
   for (let i = 0; i < 100; i++) applyBuoyancy(boat, 0, 0, 0, 10, 2, () => 0, state, 0.1);
-  assert.ok(boat.rotation.z <= 26 * Math.PI / 180 + 1e-9);
+  assert.ok(boat.rotation.z <= (26 * Math.PI) / 180 + 1e-9);
   boat.geometry.dispose();
   boat.material.dispose();
 });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Matrix4, Raycaster, Vector3 } from 'three';
+import { Matrix4, PlaneGeometry, Raycaster, Vector3 } from 'three';
 import { createSeabed, sampleSeabed, REEFS, MAX_SEABED_DEPTH, DEPTH_MAP_WORLD_SIZE } from './seabed.js';
 import { ISLANDS, shoreDistance } from './world.js';
 
@@ -20,8 +20,10 @@ test('reefs are shallow, channels are deep, and all depths remain safe for the y
   assert.equal(sampleSeabed(1500, 0).depth, MAX_SEABED_DEPTH);
 });
 
-test('the optical depth map and coral anchors match the actual seabed triangles', (t) => {
-  const seabed = createSeabed();
+test('the optical depth map and coral anchors match the actual seabed triangles', async (t) => {
+  let yields = 0;
+  const seabed = await createSeabed(async () => { yields++; });
+  assert.ok(yields > 1, 'Terrain preparation must leave room for painting the loading progress');
   t.after(() => {
     seabed.depthMap.dispose();
     seabed.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); o.geometry?.dispose(); o.material?.dispose(); });
@@ -54,4 +56,11 @@ test('the optical depth map and coral anchors match the actual seabed triangles'
       for (const island of ISLANDS) assert.ok(shoreDistance(base.x, base.z, island) > 4);
     }
   }
+});
+
+test('cancelled terrain preparation releases its partially constructed geometry', async (t) => {
+  const dispose = t.mock.method(PlaneGeometry.prototype, 'dispose');
+  const cancelled = new DOMException('Cancelled test', 'AbortError');
+  await assert.rejects(createSeabed(async () => { throw cancelled; }), (cause) => cause === cancelled);
+  assert.equal(dispose.mock.callCount(), 1);
 });

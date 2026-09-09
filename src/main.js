@@ -1,9 +1,19 @@
 import './styles.css';
 import { createGame, stepGame } from './game.js';
-import { createScene } from './scene.js';
-import { mountUI, updateUI, formatTime, icon } from './ui.js';
+import { mountUI, updateUI, updateLoading, formatTime, icon } from './ui.js';
+import { createVisibleClock, yieldToBrowser } from './scene-startup.js';
 
+const lifetime = new AbortController();
+const STARTUP_TIMEOUT_MS = 60_000;
+const STARTUP_TIMEOUT_CHECK_MS = 250;
+const signal = lifetime.signal;
+const startupClock = createVisibleClock(document, signal);
+const listen = (target, type, listener, options = {}) => target.addEventListener(type, listener, { ...options, signal });
 const refs = mountUI(document.querySelector('#app'));
+refs.stage.setAttribute('aria-busy', 'true');
+refs.stage.querySelectorAll('button, input').forEach((element) => {
+  element.disabled = true;
+});
 let game = createGame();
 let world;
 const keys = new Set();
@@ -14,6 +24,8 @@ let lastUI = 0;
 let visualTime = 0;
 let dragging = null;
 let windVisible = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let disposed = false;
+let failed = false;
 
 function clearControls() {
   keys.clear();
@@ -39,7 +51,8 @@ function setMode(mode) {
     refs['state-eyebrow'].textContent = 'ПЯТЬ БУЁВ. ОДНО МАЛЕНЬКОЕ ПРИКЛЮЧЕНИЕ.';
     refs['state-title'].textContent = 'Ветер на твоей стороне.';
     refs['state-description'].textContent = 'Маршрут пройден. Теперь ты знаешь: чтобы двигаться вперёд, не всегда нужно идти прямо.';
-    refs['finish-stats'].innerHTML = `<div><strong>${formatTime(game.elapsed)}</strong><span>в море</span></div><div><strong>${(game.distance / 1000).toFixed(2)} км</strong><span>под парусом</span></div><div><strong>${(game.maxSpeed / 0.514444).toFixed(1)} узл</strong><span>лучший ход</span></div>`;
+    refs['finish-stats'].innerHTML =
+      `<div><strong>${formatTime(game.elapsed)}</strong><span>в море</span></div><div><strong>${(game.distance / 1000).toFixed(2)} км</strong><span>под парусом</span></div><div><strong>${(game.maxSpeed / 0.514444).toFixed(1)} узл</strong><span>лучший ход</span></div>`;
     refs['resume-button'].innerHTML = `Ещё одно путешествие ${icon('arrow')}`;
   } else if (mode === 'paused') {
     refs['state-eyebrow'].textContent = 'МОЖНО НЕ СПЕШИТЬ';
@@ -64,12 +77,12 @@ function togglePause() {
   else if (game.mode === 'paused') setMode('sailing');
 }
 
-refs['start-button'].addEventListener('click', () => setMode('sailing'));
-refs['pause-button'].addEventListener('click', togglePause);
-refs['resume-button'].addEventListener('click', () => game.mode === 'finished' ? restart() : setMode('sailing'));
-refs['restart-button'].addEventListener('click', restart);
+listen(refs['start-button'], 'click', () => setMode('sailing'));
+listen(refs['pause-button'], 'click', togglePause);
+listen(refs['resume-button'], 'click', () => (game.mode === 'finished' ? restart() : setMode('sailing')));
+listen(refs['restart-button'], 'click', restart);
 for (const key of ['main', 'jib']) {
-  refs[`${key}-trim`].addEventListener('input', (event) => {
+  listen(refs[`${key}-trim`], 'input', (event) => {
     game[`${key}Trim`] = Number(event.target.value);
     updateUI(refs, game);
   });
@@ -79,30 +92,31 @@ function updateWindVisibility() {
   refs['wind-button'].setAttribute('aria-pressed', String(windVisible));
   refs['wind-button'].title = windVisible ? 'Скрыть линии ветра' : 'Показать линии ветра';
 }
-refs['wind-button'].addEventListener('click', () => {
+listen(refs['wind-button'], 'click', () => {
   windVisible = !windVisible;
   updateWindVisibility();
 });
-refs['help-button'].addEventListener('click', () => {
+listen(refs['help-button'], 'click', () => {
   helpWasSailing = game.mode === 'sailing';
   if (helpWasSailing) setMode('paused');
   refs['help-dialog'].showModal();
 });
-refs['close-help'].addEventListener('click', () => refs['help-dialog'].close());
-refs['help-done'].addEventListener('click', () => refs['help-dialog'].close());
-refs['help-dialog'].addEventListener('close', () => {
+listen(refs['close-help'], 'click', () => refs['help-dialog'].close());
+listen(refs['help-done'], 'click', () => refs['help-dialog'].close());
+listen(refs['help-dialog'], 'close', () => {
   if (helpWasSailing && !document.hidden) setMode('sailing');
   helpWasSailing = false;
 });
-refs['help-dialog'].addEventListener('click', (event) => {
+listen(refs['help-dialog'], 'click', (event) => {
   if (event.target === refs['help-dialog']) {
     const bounds = refs['help-dialog'].getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) refs['help-dialog'].close();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)
+      refs['help-dialog'].close();
   }
 });
-refs['camera-button'].addEventListener('click', () => world.resetCamera());
+listen(refs['camera-button'], 'click', () => world.resetCamera());
 refs['fullscreen-button'].hidden = !document.fullscreenEnabled;
-refs['fullscreen-button'].addEventListener('click', async () => {
+listen(refs['fullscreen-button'], 'click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await document.documentElement.requestFullscreen();
@@ -112,12 +126,12 @@ refs['fullscreen-button'].addEventListener('click', async () => {
     refs['error-message'].hidden = false;
   }
 });
-document.addEventListener('fullscreenchange', () => {
+listen(document, 'fullscreenchange', () => {
   refs['fullscreen-button'].setAttribute('aria-label', document.fullscreenElement ? 'Выйти из полноэкранного режима' : 'На весь экран');
 });
 
 const gameplayKeys = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyQ', 'KeyE', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-window.addEventListener('keydown', (event) => {
+listen(window, 'keydown', (event) => {
   if (refs['help-dialog'].open) return;
   const isInput = event.target instanceof HTMLInputElement;
   const isRange = isInput && event.target.type === 'range';
@@ -127,24 +141,27 @@ window.addEventListener('keydown', (event) => {
     if (!event.repeat) togglePause();
     return;
   }
-  if (event.code === 'Escape') { if (game.mode === 'sailing') setMode('paused'); return; }
+  if (event.code === 'Escape') {
+    if (game.mode === 'sailing') setMode('paused');
+    return;
+  }
   // Preserve native arrow-key adjustment of the slider, but not at the cost of A/D steering.
   if (!gameplayKeys.includes(event.code) || (isInput && (!isRange || event.code.startsWith('Arrow'))) || game.mode !== 'sailing') return;
   event.preventDefault();
   keys.add(event.code);
 });
-window.addEventListener('keyup', (event) => keys.delete(event.code));
-window.addEventListener('blur', () => {
+listen(window, 'keyup', (event) => keys.delete(event.code));
+listen(window, 'blur', () => {
   clearControls();
   if (game.mode === 'sailing') setMode('paused');
 });
-document.addEventListener('visibilitychange', () => {
+listen(document, 'visibilitychange', () => {
   lastFrame = 0;
   if (document.hidden && game.mode === 'sailing') setMode('paused');
 });
 
 document.querySelectorAll('[data-rudder]').forEach((button) => {
-  button.addEventListener('pointerdown', (event) => {
+  listen(button, 'pointerdown', (event) => {
     if (game.mode !== 'sailing') return;
     event.preventDefault();
     button.setPointerCapture(event.pointerId);
@@ -155,81 +172,144 @@ document.querySelectorAll('[data-rudder]').forEach((button) => {
     touchRudders.delete(event.pointerId);
     button.classList.remove('held');
   };
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointercancel', release);
-  button.addEventListener('lostpointercapture', release);
+  listen(button, 'pointerup', release);
+  listen(button, 'pointercancel', release);
+  listen(button, 'lostpointercapture', release);
 });
 
-refs.scene.addEventListener('pointerdown', (event) => {
+listen(refs.scene, 'pointerdown', (event) => {
   if (event.button !== 0) return;
   dragging = { id: event.pointerId, x: event.clientX };
   refs.scene.setPointerCapture(event.pointerId);
 });
-refs.scene.addEventListener('pointermove', (event) => {
+listen(refs.scene, 'pointermove', (event) => {
   if (!dragging || dragging.id !== event.pointerId || !world) return;
   world.rotate(-(event.clientX - dragging.x) * 0.007);
   dragging.x = event.clientX;
 });
-for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) refs.scene.addEventListener(event, () => { dragging = null; });
-refs.scene.addEventListener('wheel', (event) => {
-  event.preventDefault();
-  world.zoom(event.deltaY * 0.001);
-}, { passive: false });
+for (const event of ['pointerup', 'pointercancel', 'lostpointercapture'])
+  listen(refs.scene, event, () => {
+    dragging = null;
+  });
+listen(
+  refs.scene,
+  'wheel',
+  (event) => {
+    if (!world || !refs.loading.hidden) return;
+    event.preventDefault();
+    world.zoom(event.deltaY * 0.001);
+  },
+  { passive: false },
+);
 
 function showFatal(cause, code) {
+  if (failed || disposed) return;
+  failed = true;
   console.error(code, { cause });
   if (game.mode === 'sailing') setMode('paused');
+  if (refs['help-dialog'].open) refs['help-dialog'].close();
+  lifetime.abort(cause);
+  world?.dispose();
+  refs.stage.setAttribute('aria-busy', 'false');
   refs.loading.hidden = true;
   refs['state-overlay'].hidden = true;
-  refs['error-message'].textContent = `${code}: Не удалось отобразить 3D-море. Включи аппаратное ускорение в браузере и обнови страницу.`;
+  refs['error-message'].textContent =
+    `${code}: Не удалось подготовить 3D-море. Обнови страницу. Если ошибка повторится, проверь подключение к сети и аппаратное ускорение браузера.`;
   refs['error-message'].hidden = false;
   refs.stage.dataset.mode = 'error';
-  refs.stage.querySelectorAll('button, input').forEach((element) => { element.disabled = true; });
+  refs.stage.querySelectorAll('button, input').forEach((element) => {
+    element.disabled = true;
+  });
 }
 
-try {
-  world = createScene(refs.scene);
-  updateWindVisibility();
-  world.renderer.domElement.addEventListener('webglcontextlost', (event) => {
-    event.preventDefault();
-    world.renderer.setAnimationLoop(null);
-    showFatal(new Error('WebGL context lost'), 'SEA_CONTEXT_LOST');
-  });
-  updateUI(refs, game);
-  world.renderer.setAnimationLoop((timestamp) => {
-    const dt = lastFrame === 0 ? 1 / 60 : Math.min((timestamp - lastFrame) / 1000, 0.1);
-    lastFrame = timestamp;
-    if (document.hidden) return;
-    const previousMode = game.mode;
-    const right = keys.has('KeyD') || keys.has('ArrowRight');
-    const left = keys.has('KeyA') || keys.has('ArrowLeft');
-    const sailRight = keys.has('KeyS') || keys.has('ArrowDown');
-    const sailLeft = keys.has('KeyW') || keys.has('ArrowUp');
-    const jibRight = keys.has('KeyE');
-    const jibLeft = keys.has('KeyQ');
-    const touch = [...touchRudders.values()].reduce((sum, value) => sum + value, 0);
-    stepGame(game, {
-      rudder: Math.max(-1, Math.min(1, Number(right) - Number(left) + touch)),
-      mainTrim: Number(sailRight) - Number(sailLeft),
-      jibTrim: Number(jibRight) - Number(jibLeft),
-    }, dt);
-    if (previousMode !== game.mode) setMode(game.mode);
-    if (game.mode !== 'paused' && game.mode !== 'finished') visualTime += dt;
-    world.render(game, visualTime, dt);
+async function start() {
+  const timeout = setInterval(() => {
+    if (startupClock() >= STARTUP_TIMEOUT_MS)
+      showFatal(new Error('Initial preparation exceeded 60 seconds of foreground time'), 'SEA_INIT_TIMEOUT');
+  }, STARTUP_TIMEOUT_CHECK_MS);
+  const cancelTimeout = () => clearInterval(timeout);
+  signal.addEventListener('abort', cancelTimeout, { once: true });
+  try {
+    performance.mark('sailwind-startup');
+    const checkpoint = async (completed, label) => {
+      signal.throwIfAborted();
+      updateLoading(refs, completed, label);
+      await yieldToBrowser(signal);
+    };
+    await checkpoint(0, 'Загружаем навигацию');
+    const { createScene } = await import('./scene.js');
+    signal.throwIfAborted();
+    world = await createScene(refs.scene, {
+      checkpoint,
+      signal,
+      clock: startupClock,
+      onContextLost: () => showFatal(new Error('WebGL context lost'), 'SEA_CONTEXT_LOST'),
+    });
+    updateWindVisibility();
+    await world.prepare(game);
+    await checkpoint(7, 'Проверяем готовность к выходу');
+    await world.warmup(game);
+    await checkpoint(8, 'Море готово. Попутного ветра!');
+    signal.throwIfAborted();
     refs.loading.hidden = true;
-    if (timestamp - lastUI > 80) {
-      updateUI(refs, game);
-      const marker = world.projectWaypoint(game);
-      refs['waypoint-marker'].hidden = !marker?.visible || game.mode !== 'sailing';
-      if (marker?.visible) {
-        refs['waypoint-marker'].style.transform = `translate(${marker.x}px, ${marker.y}px) translate(-50%, -100%)`;
+    performance.mark('sailwind-ready');
+    performance.measure('sailwind-startup', 'sailwind-startup', 'sailwind-ready');
+    refs.stage.setAttribute('aria-busy', 'false');
+    refs.stage.querySelectorAll('button, input').forEach((element) => {
+      element.disabled = false;
+    });
+    updateUI(refs, game);
+    world.renderer.setAnimationLoop((timestamp) => {
+      try {
+        const dt = lastFrame === 0 ? 1 / 60 : Math.min((timestamp - lastFrame) / 1000, 0.1);
+        lastFrame = timestamp;
+        if (document.hidden) return;
+        const previousMode = game.mode;
+        const right = keys.has('KeyD') || keys.has('ArrowRight');
+        const left = keys.has('KeyA') || keys.has('ArrowLeft');
+        const sailRight = keys.has('KeyS') || keys.has('ArrowDown');
+        const sailLeft = keys.has('KeyW') || keys.has('ArrowUp');
+        const jibRight = keys.has('KeyE');
+        const jibLeft = keys.has('KeyQ');
+        const touch = [...touchRudders.values()].reduce((sum, value) => sum + value, 0);
+        stepGame(
+          game,
+          {
+            rudder: Math.max(-1, Math.min(1, Number(right) - Number(left) + touch)),
+            mainTrim: Number(sailRight) - Number(sailLeft),
+            jibTrim: Number(jibRight) - Number(jibLeft),
+          },
+          dt,
+        );
+        if (previousMode !== game.mode) setMode(game.mode);
+        if (game.mode !== 'paused' && game.mode !== 'finished') visualTime += dt;
+        world.render(game, visualTime, dt);
+        if (timestamp - lastUI > 80) {
+          updateUI(refs, game);
+          const marker = world.projectWaypoint(game);
+          refs['waypoint-marker'].hidden = !marker?.visible || game.mode !== 'sailing';
+          if (marker?.visible) {
+            refs['waypoint-marker'].style.transform = `translate(${marker.x}px, ${marker.y}px) translate(-50%, -100%)`;
+          }
+          lastUI = timestamp;
+        }
+      } catch (cause) {
+        showFatal(cause, 'SEA_RENDER_FAILED');
       }
-      lastUI = timestamp;
-    }
-  });
-} catch (cause) {
-  world?.dispose();
-  showFatal(cause, 'SEA_INIT_FAILED');
+    });
+  } catch (cause) {
+    world?.dispose();
+    showFatal(cause, 'SEA_INIT_FAILED');
+  } finally {
+    cancelTimeout();
+    signal.removeEventListener('abort', cancelTimeout);
+  }
 }
 
-if (import.meta.hot) import.meta.hot.dispose(() => { world?.dispose(); });
+if (import.meta.hot)
+  import.meta.hot.dispose(() => {
+    disposed = true;
+    lifetime.abort();
+    world?.dispose();
+  });
+void start();
