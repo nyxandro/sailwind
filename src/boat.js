@@ -55,11 +55,11 @@ function sailTexture() {
   return texture;
 }
 
-export function setSailTrim(yacht, mainTrim, jibTrim, loads, time, relativeWind) {
+export function setSailTrim(yacht, mainTrim, jibTrim, loads, time, relativeWind, hoists) {
   const angle = radians(mainTrim);
   yacht.mainSail.rotation.y = angle;
-  updateMainCloth(yacht.mainCloth, mainTrim, loads.main, time, relativeWind);
-  updateJib(yacht.jib, jibTrim, loads.jib, time, relativeWind);
+  updateMainCloth(yacht.mainCloth, mainTrim, loads.main, time, relativeWind, hoists.main);
+  updateJib(yacht.jib, jibTrim, loads.jib, time, relativeWind, hoists.jib);
   updateRigging(yacht.rigging, yacht.mainSail, yacht.jib);
 }
 

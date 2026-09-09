@@ -83,6 +83,10 @@ export function mountUI(root) {
             <div class="sail-heading"><label class="eyebrow" for="${key}-trim">${SAILS[key].label.toUpperCase()}</label><strong id="${key}-trim-value">+40°</strong></div>
             <input id="${key}-trim" type="range" min="${-MAX_SAIL_ANGLE}" max="${MAX_SAIL_ANGLE}" value="40" aria-label="${SAILS[key].label}: угол паруса"/>
             <div class="trim-labels"><span><kbd>${left}</kbd> Влево</span><span>0°</span><span>Вправо <kbd>${right}</kbd></span></div>
+            <div class="hoist-control">
+              <div class="hoist-heading"><label for="${key}-hoist">Подъём</label><span id="${key}-hoist-value">100%</span></div>
+              <input id="${key}-hoist" class="hoist-slider" type="range" min="0" max="100" step="1" value="100" aria-label="${SAILS[key].label}: подъём паруса" aria-describedby="${key}-hoist-value"/>
+            </div>
             <div class="power-label"><span class="power-dot"></span><span id="${key}-power-label">Тяга</span><strong id="${key}-power-value"></strong></div>
           </div>`).join('')}
       </section>
@@ -120,7 +124,7 @@ export function mountUI(root) {
       <p class="dialog-lead">Пройди пять буёв по порядку.<br>Планируй повороты: яхта весит ${(YACHT_PHYSICS.mass / 1000).toLocaleString('ru-RU')} тонны.</p>
       <div class="help-steps">
         <article><span>01</span><div><h3>Задай направление</h3><p><kbd>A</kbd> / <kbd>D</kbd> или стрелки управляют рулём. На телефоне удерживай экранные кнопки. Яхта начинает и заканчивает поворот постепенно.</p></div></article>
-        <article><span>02</span><div><h3>Настрой каждый парус</h3><p><strong>Грот</strong>: <kbd>W</kbd> влево, <kbd>S</kbd> вправо. <strong>Стаксель</strong>: <kbd>Q</kbd> влево, <kbd>E</kbd> вправо. Можно использовать два ползунка. Диапазон от −90° слева до +90° справа; 0° вдоль яхты. Автоматики нет.</p></div></article>
+        <article><span>02</span><div><h3>Настрой каждый парус</h3><p><strong>Грот</strong>: <kbd>W</kbd> влево, <kbd>S</kbd> вправо. <strong>Стаксель</strong>: <kbd>Q</kbd> влево, <kbd>E</kbd> вправо. Ползунки угла работают от −90° слева до +90° справа; 0° вдоль яхты. Ползунком «Подъём» выбери высоту каждого паруса: 0% — спущен, 100% — поднят. Полный подъём или спуск занимает 5 секунд. Меньше раскрытая площадь — меньше тяга; инерция и течение сохраняются.</p></div></article>
         <article><span>03</span><div><h3>Учитывай инерцию и задний ход</h3><p>После потери тяги яхта продолжает скользить. Если паруса тянут назад, сначала она затормозит, затем пойдёт кормой вперёд, заметно медленнее. При движении назад относительно воды руль реагирует наоборот.</p></div></article>
         <article><span>04</span><div><h3>Прочитай ветер и течение</h3><p>Тонкие штрихи над водой летят по ветру; стрелка на компасе показывает, откуда он приходит. В бежевом секторе вперёд не пройти: измени курс или открой паруса поперёк ветра, чтобы отойти назад. Синяя стрелка под компасом показывает течение: оно несёт даже яхту без тяги.</p></div></article>
       </div>
@@ -223,9 +227,17 @@ export function updateUI(refs, game) {
     const trimPosition = (trim + MAX_SAIL_ANGLE) / (MAX_SAIL_ANGLE * 2) * 100;
     slider.style.setProperty('--trim-start', `${Math.min(50, trimPosition)}%`);
     slider.style.setProperty('--trim-end', `${Math.max(50, trimPosition)}%`);
+    const hoist = game[`${key}Hoist`] * 100;
+    const target = Math.round(game[`${key}HoistTarget`] * 100);
+    const hoistSlider = refs[`${key}-hoist`];
+    hoistSlider.disabled = game.mode !== 'sailing';
+    hoistSlider.value = target;
+    hoistSlider.style.setProperty('--hoist-position', `${hoist}%`);
+    hoistSlider.setAttribute('aria-valuetext', `Выбран подъём ${target}%`);
+    refs[`${key}-hoist-value`].textContent = Math.abs(hoist - target) < 0.5 ? `${target}%` : `${Math.round(hoist)}% → ${target}%`;
     const power = Math.round(rig[key].power * 100);
     refs[`${key}-power-value`].textContent = `${power}%`;
-    refs[`${key}-power-label`].textContent = rig[key].drive < -0.03 ? 'Тянет назад' : power > 75 ? 'Ловит ветер' : power > 30 ? 'Слабая тяга' : 'Теряет ветер';
+    refs[`${key}-power-label`].textContent = hoist === 0 ? 'Спущен' : rig[key].drive < -0.03 ? 'Тянет назад' : power > 75 ? 'Ловит ветер' : rig[key].efficiency >= 0.78 && rig[key].angle >= 35 && hoist < 100 ? 'Площадь уменьшена' : power > 30 ? 'Слабая тяга' : 'Теряет ветер';
     refs[`${key}-power-value`].parentElement.dataset.tone = power < 40 ? 'warning' : 'good';
   }
   refs['wind-speed'].textContent = game.windSpeed.toFixed(1);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SAILS, radians, clamp } from './world.js';
+import { clothFold, validateHoist } from './hoist.js';
 
 export function createClothGeometry() {
   const segments = 22;
@@ -32,16 +33,18 @@ export function clothBulge(trim, load, u, v, time, foot, relativeWind) {
 export function createMainCloth(material) {
   const mesh = new THREE.Mesh(createClothGeometry(), material);
   mesh.castShadow = true;
-  updateMainCloth(mesh, 0, 0, 0, 0);
+  updateMainCloth(mesh, 0, 0, 0, 0, 1);
   return mesh;
 }
 
-export function updateMainCloth(mesh, trim, load, time, relativeWind) {
+export function updateMainCloth(mesh, trim, load, time, relativeWind, hoist) {
+  validateHoist(hoist);
   const { position, uv } = mesh.geometry.attributes;
   for (let i = 0; i < position.count; i++) {
     const u = uv.getX(i);
     const v = uv.getY(i);
-    position.setXYZ(i, clothBulge(trim, load, u, v, time, SAILS.main.foot, relativeWind), v * SAILS.main.height, u * (1 - v) * SAILS.main.foot);
+    const fold = clothFold(u, v, hoist);
+    position.setXYZ(i, clothBulge(trim, load, u, v, time, SAILS.main.foot, relativeWind) * hoist + fold.width, v * SAILS.main.height * hoist + fold.height, u * (1 - v) * SAILS.main.foot);
   }
   position.needsUpdate = true;
   mesh.geometry.computeVertexNormals();

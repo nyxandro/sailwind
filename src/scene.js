@@ -198,6 +198,7 @@ export async function createScene(container, { checkpoint, signal, clock, onCont
           { main: sail.main.power, jib: sail.jib.power },
           time,
           signedAngle(game.heading, game.windDirection),
+          { main: game.mainHoist, jib: game.jibHoist },
         );
         marineLife.update(game, time);
         wind.update(game, dt);

@@ -2,6 +2,7 @@ import { ROUTE, BUOY_RADIUS, WORLD_RADIUS, MAX_SAIL_ANGLE, SAILS, radians, signe
 import { currentAt } from './currents.js';
 import { integrateMotion, YACHT_PHYSICS } from './motion.js';
 import { resolveShoreCollision } from './shore-collision.js';
+import { advanceHoists, validateHoist } from './hoist.js';
 
 const MIN_TRIM_EFFICIENCY = 0.78;
 
@@ -9,6 +10,7 @@ export function createGame() {
   const current = currentAt(0, 0);
   return {
     mode: 'ready', x: 0, z: 0, heading: 20, mainTrim: 40, jibTrim: 40, speed: 0,
+    mainHoist: 1, jibHoist: 1, mainHoistTarget: 1, jibHoistTarget: 1,
     velocityX: 0, velocityZ: 0, waterSpeed: 0, groundSpeed: 0, yawRate: 0, rudder: 0,
     currentX: current.x, currentZ: current.z,
     windDirection: 300, windSpeed: 12, elapsed: 0, distance: 0,
@@ -36,6 +38,11 @@ export function sailPower(heading, windDirection, trim) {
 export function rigPower(game) {
   const main = sailPower(game.heading, game.windDirection, game.mainTrim);
   const jib = sailPower(game.heading, game.windDirection, game.jibTrim);
+  for (const [key, sail] of [['main', main], ['jib', jib]]) {
+    const hoist = validateHoist(game[`${key}Hoist`]);
+    sail.power *= hoist;
+    sail.drive *= hoist;
+  }
   const mainArea = SAILS.main.height * SAILS.main.foot / 2;
   const jibArea = SAILS.jib.height * SAILS.jib.foot / 2;
   return {
@@ -48,6 +55,7 @@ export function stepGame(game, input, delta) {
   if (game.mode !== 'sailing') return;
   // Bound the simulation step after suspended tabs or slow frames.
   const dt = clamp(delta, 0, 0.1);
+  advanceHoists(game, dt);
   game.elapsed += dt;
   game.windDirection = 300 + Math.sin(game.elapsed * 0.025) * 14;
   game.windSpeed = 12 + Math.sin(game.elapsed * 0.13) * 1.6;
@@ -92,11 +100,12 @@ export function stepGame(game, input, delta) {
 
 export function sailingHint(game) {
   const rig = rigPower(game);
-  const key = rig.main.efficiency <= rig.jib.efficiency ? 'main' : 'jib';
+  const key = game.mainHoist === 0 ? 'jib' : game.jibHoist === 0 ? 'main' : rig.main.efficiency <= rig.jib.efficiency ? 'main' : 'jib';
   const sail = rig[key];
   const trim = game[`${key}Trim`];
   if (game.collision > 0) return { title: 'Осторожно, мелководье', detail: 'Поверни от берега и снова поймай ветер.', tone: 'warning' };
   if (game.boundary) return { title: 'Край архипелага', detail: 'Развернись к маршруту на карте.', tone: 'warning' };
+  if (game.mainHoist === 0 && game.jibHoist === 0) return { title: 'Паруса спущены', detail: 'Яхта движется по инерции и течению. Подними любой парус, чтобы дать тягу.', tone: 'good' };
   if (rig.drive < -0.03) return { title: 'Паруса тянут назад', detail: 'Яхта сначала погасит инерцию, затем пойдёт кормой вперёд. Руль работает наоборот.', tone: 'warning' };
   if (rig.power < 0.05 && game.groundSpeed > 0.08 && game.waterSpeed < 0.3) return { title: 'Дрейф по течению', detail: 'Вода несёт яхту. Поймай ветер, чтобы управлять ходом.', tone: 'good' };
   if (sail.angle < 35) return { title: 'Ветер прямо в нос', detail: 'Поверни влево или вправо, чтобы наполнить парус.', tone: 'warning' };

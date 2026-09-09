@@ -96,7 +96,7 @@ h1 > span { font-family: 'Cormorant Garamond', Georgia, serif; font-style: itali
 .sailing-feedback strong { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.1px; }
 .sailing-feedback div > span { display: block; font-size: 9px; margin-top: 4px; opacity: 0.85; }
 .sailing-feedback[data-tone='warning'] .feedback-symbol { color: #ffe0ac; border-color: #ffe0ac; }
-.instruments { position: absolute; left: 32px; bottom: 55px; display: flex; width: 760px; height: 124px; padding: 19px 0; }
+.instruments { position: absolute; left: 32px; bottom: 55px; display: flex; width: 760px; height: 166px; padding: 19px 0; }
 .instrument { padding: 0 20px; }
 .instrument + .instrument { border-left: 1px solid var(--line); }
 .speed-instrument { width: 140px; flex-shrink: 0; }
@@ -113,6 +113,10 @@ h1 > span { font-family: 'Cormorant Garamond', Georgia, serif; font-style: itali
 .sail-instrument[data-sail='jib'] { --sail-accent: #a47c56; }
 .sail-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .sail-heading strong { font-size: 14px; font-weight: 600; }
+.hoist-control { margin-top: 8px; }
+.hoist-heading { display: flex; justify-content: space-between; gap: 4px; font-size: 9px; color: #506b5e; font-variant-numeric: tabular-nums; }
+input[type='range'].hoist-slider { --hoist-position: 100%; --sail-track: linear-gradient(to right, var(--sail-accent, #6c8d68) var(--hoist-position), #d2d8c4 var(--hoist-position)); }
+input.hoist-slider:disabled { opacity: 0.55; cursor: default; }
 input[type='range'] { --trim-start: 50%; --trim-end: 72%; --sail-track: linear-gradient(to right, transparent calc(50% - 1px), #244a43 calc(50% - 1px), #244a43 calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(to right, #d2d8c4 var(--trim-start), var(--sail-accent, #6c8d68) var(--trim-start), var(--sail-accent, #6c8d68) var(--trim-end), #d2d8c4 var(--trim-end)); display: block; width: 100%; appearance: none; -webkit-appearance: none; height: 18px; background: transparent; cursor: pointer; margin: 0; touch-action: pan-y; }
 input[type='range']::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; background: var(--sail-track); }
 input[type='range']::-moz-range-track { height: 5px; border-radius: 5px; background: var(--sail-track); }
@@ -206,6 +210,7 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
 .error-message { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: min(480px, calc(100% - 40px)); padding: 25px; background: #f8f1df; border: 1px solid #cfb990; border-radius: 12px; color: #805c39; line-height: 1.8; font-size: 13px; z-index: 20; }
 .header-description, .edition, .state-card p { color: #62715e; }
 .sailing-feedback { background: #284f46cc; border: 1px solid #e2edce30; padding: 11px 15px; border-radius: 10px; text-shadow: none; backdrop-filter: blur(8px); }
+.sailing-feedback { bottom: 248px; }
 .desktop-controls { color: #244a43; }
 .desktop-controls kbd { border-color: #244a4370; background: #f0f1db66; }
 @keyframes bob { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-6px); } }
@@ -234,7 +239,7 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .compass { width: 130px; height: 130px; }
   .camera-tools { top: 310px; }
   .in-voyage .camera-tools { top: 358px; }
-  .sailing-feedback { bottom: 197px; }
+  .sailing-feedback { bottom: 239px; }
 }
 
 @media (max-width: 1100px) {
@@ -269,7 +274,7 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .speed-instrument { width: 18%; }
   .course-instrument { width: 17%; }
   .sail-instrument { flex: 1; }
-  .chart-panel { bottom: 230px; width: 184px; padding: 12px; }
+  .chart-panel { bottom: 272px; width: 184px; padding: 12px; }
   .chart-panel .eyebrow { font-size: 6px; letter-spacing: 1px; }
   .chart-footer { font-size: 6px; }
   .wind-panel { width: 180px; padding: 15px; }
@@ -286,7 +291,7 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .touch-controls button:last-child .icon { transform: rotate(180deg); }
   .touch-controls button.held { background: #d9edaa; }
   .touch-controls > span { font-size: 7px; color: #edf2e1; white-space: nowrap; letter-spacing: 1px; }
-  .sailing-feedback, [data-mode='ready'] .sailing-feedback { bottom: 231px; left: 36%; }
+  .sailing-feedback, [data-mode='ready'] .sailing-feedback { bottom: 273px; left: 36%; max-width: 54%; white-space: normal; }
   .voyage-panel { left: 24px; width: 245px; }
   .session-controls { left: 24px; }
 }
@@ -331,13 +336,13 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .camera-tools .round-button { width: 32px; height: 32px; }
   .camera-tools .icon { width: 15px; height: 15px; }
   .scene-vignette { background: linear-gradient(120deg, #e1eadbe6 0%, #d8e7d75c 37%, transparent 59%); }
-  .chart-panel { bottom: 328px; left: 14px; right: auto; width: 135px; padding: 9px; border-radius: 8px; }
+  .chart-panel { bottom: 370px; left: 14px; right: auto; width: 135px; padding: 9px; border-radius: 8px; }
   .chart-panel .eyebrow { font-size: 5px; letter-spacing: 0.7px; }
   .chart-panel .panel-heading .icon { width: 11px; height: 11px; }
   #chart { margin: 5px 0 2px; }
   .chart-footer { font-size: 6px; padding-top: 5px; }
   [data-mode='ready'] .chart-panel { display: none; }
-  .instruments { bottom: 77px; left: 14px; right: 14px; height: 160px; padding: 10px 0; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 40px 1fr; }
+  .instruments { bottom: 77px; left: 14px; right: 14px; height: 202px; padding: 10px 0; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 40px 1fr; }
   .instrument { padding: 0 12px; }
   .speed-instrument, .course-instrument { width: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .instrument .eyebrow { font-size: 8px; letter-spacing: 0.7px; }
@@ -359,7 +364,7 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .touch-controls button { width: 60px; height: 43px; }
   .touch-controls > span { font-size: 6px; letter-spacing: 0.7px; }
   .touch-controls > span { color: #244a43; }
-  .sailing-feedback, [data-mode='ready'] .sailing-feedback { left: 50%; bottom: 255px; gap: 8px; width: max-content; max-width: calc(100% - 32px); white-space: normal; }
+  .sailing-feedback, [data-mode='ready'] .sailing-feedback { left: 50%; bottom: 297px; gap: 8px; width: max-content; max-width: calc(100% - 32px); white-space: normal; }
   .sailing-feedback strong { font-size: 10px; }
   .sailing-feedback div > span { font-size: 7px; margin-top: 3px; }
   .feedback-symbol { width: 29px; height: 29px; flex-shrink: 0; }
@@ -390,6 +395,12 @@ dialog::backdrop { background: #173d3c70; backdrop-filter: blur(6px); }
   .session-controls { top: 7px; left: auto; right: 14px; }
   .in-voyage .session-controls { top: 14px; left: 14px; right: auto; }
   .in-voyage .location { display: none; }
+}
+
+@media (max-width: 600px) and (max-height: 740px) {
+  .chart-panel .panel-heading, .chart-panel .chart-footer { display: none; }
+  #chart { margin: 0; }
+  .camera-tools, .in-voyage .camera-tools { top: 231px; flex-direction: row; }
 }
 
 @media (pointer: coarse) and (min-width: 861px) {

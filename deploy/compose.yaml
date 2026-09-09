@@ -2,7 +2,7 @@ name: sailwind
 
 services:
   web:
-    image: sailwind:bundle-fa7fb53be814
+    image: sailwind:bundle-11fd3e08dee3
     pull_policy: never
     restart: unless-stopped
     read_only: true

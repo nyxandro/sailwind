@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Group, MeshStandardMaterial, Vector3 } from 'three';
-import { setSailTrim } from './boat.js';
+import { setSailTrim as updateSails } from './boat.js';
 import { createJib } from './jib.js';
 import { createMainCloth } from './sail-cloth.js';
 import { createRigging } from './rigging.js';
 import { SAILS } from './world.js';
+
+function setSailTrim(yacht, mainTrim, jibTrim, loads, time, relativeWind) {
+  updateSails(yacht, mainTrim, jibTrim, loads, time, relativeWind, { main: 1, jib: 1 });
+}
 
 function createTestYacht(t) {
   const yacht = { boat: new Group(), mainSail: new Group(), mainCloth: createMainCloth(new MeshStandardMaterial()), jib: createJib(), rigging: createRigging() };

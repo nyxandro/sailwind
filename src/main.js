@@ -86,6 +86,11 @@ for (const key of ['main', 'jib']) {
     game[`${key}Trim`] = Number(event.target.value);
     updateUI(refs, game);
   });
+  listen(refs[`${key}-hoist`], 'input', (event) => {
+    if (game.mode !== 'sailing') return;
+    game[`${key}HoistTarget`] = Number(event.target.value) / 100;
+    updateUI(refs, game);
+  });
 }
 function updateWindVisibility() {
   world.setWindVisible(windVisible);
