@@ -10,12 +10,13 @@ import { SAILS } from './world.js';
 
 test('hoists move independently toward selected heights without changing trim, and freeze on pause', () => {
   const game = createGame();
+  Object.assign(game, { mainHoist: 1, jibHoist: 1, mainHoistTarget: 1, jibHoistTarget: 1 });
   game.mode = 'sailing';
   game.mainHoistTarget = 0;
   stepGame(game, {}, 0.1);
   assert.ok(game.mainHoist < 1 && game.mainHoist > 0.9);
   assert.equal(game.jibHoist, 1);
-  assert.equal(game.mainTrim, 40);
+  assert.equal(game.mainTrim, 0);
   game.mode = 'paused';
   const paused = structuredClone(game);
   stepGame(game, {}, 0.1);
@@ -28,12 +29,12 @@ test('hoists move independently toward selected heights without changing trim, a
   for (let i = 0; i < 100; i++) stepGame(game, {}, 0.1);
   assert.equal(game.mainHoist, 0.37);
   assert.equal(game.jibHoist, 0);
-  assert.equal(createGame().mainHoistTarget, 1);
+  assert.equal(createGame().mainHoistTarget, 0);
 });
 
 test('actual exposed area scales forward and reverse forces with no force at zero hoist', () => {
   for (const trim of [45, -45]) {
-    const game = Object.assign(createGame(), { heading: 90, windDirection: 0, mainTrim: trim, jibTrim: trim });
+    const game = Object.assign(createGame(), { heading: 90, windDirection: 0, mainTrim: trim, jibTrim: trim, mainHoist: 1, jibHoist: 1 });
     const full = rigPower(game);
     game.mainHoist = game.jibHoist = 0.5;
     const half = rigPower(game);

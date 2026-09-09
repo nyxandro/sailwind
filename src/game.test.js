@@ -3,12 +3,39 @@ import assert from 'node:assert/strict';
 import { createGame, stepGame, sailPower, rigPower, sailingHint } from './game.js';
 import { signedAngle, clamp, ROUTE, ISLANDS, WORLD_RADIUS, shoreDistance } from './world.js';
 
+function createRaisedGame() {
+  return Object.assign(createGame(), { mainHoist: 1, jibHoist: 1, mainHoistTarget: 1, jibHoistTarget: 1, mainTrim: 40, jibTrim: 40 });
+}
+
 test('a fresh voyage is paused with a reachable first waypoint', () => {
   const game = createGame();
   assert.equal(game.mode, 'ready');
   assert.equal(game.waypoint, 0);
   assert.equal(game.speed, 0);
+  for (const key of ['main', 'jib']) {
+    assert.equal(game[`${key}Trim`], 0);
+    assert.equal(game[`${key}Hoist`], 0);
+    assert.equal(game[`${key}HoistTarget`], 0);
+  }
   assert.ok(ROUTE.length >= 3);
+});
+
+test('starting a voyage leaves sails lowered and neutral until the player raises them', () => {
+  const game = createGame();
+  game.mode = 'sailing';
+  for (let i = 0; i < 60; i++) stepGame(game, {}, 0.1);
+  assert.equal(rigPower(game).power, 0);
+  assert.equal(sailingHint(game).title, 'Паруса спущены');
+  for (const key of ['main', 'jib']) {
+    assert.equal(game[`${key}Trim`], 0);
+    assert.equal(game[`${key}Hoist`], 0);
+    assert.equal(game[`${key}HoistTarget`], 0);
+  }
+  game.mainHoistTarget = 1;
+  stepGame(game, {}, 0.1);
+  assert.ok(game.mainHoist > 0);
+  assert.equal(game.jibHoist, 0);
+  assert.equal(game.mainTrim, 0);
 });
 
 test('sailing into the wind produces no drive, even with a trimmed sail', () => {
@@ -33,7 +60,7 @@ test('port and starboard tacks are symmetric and angles wrap', () => {
 });
 
 test('a yacht accelerates with wind, moves, and coasts to a stop in irons', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.mode = 'sailing';
   game.heading = 30;
   game.mainTrim = 45;
@@ -59,7 +86,7 @@ test('paused game does not advance position, wind, or elapsed time', () => {
 });
 
 test('rudder can turn a stalled yacht out of the no-go zone', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.mode = 'sailing';
   game.heading = game.windDirection;
   const initial = game.heading;
@@ -155,7 +182,7 @@ test('manual trim crosses the centre continuously in both directions', () => {
 });
 
 test('backing the sails is reported as reverse thrust, not a dead sail', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.heading = 90;
   game.windDirection = 0;
   game.mainTrim = game.jibTrim = -45;
@@ -166,7 +193,7 @@ test('backing the sails is reported as reverse thrust, not a dead sail', () => {
 });
 
 test('near a following wind the hint improves the selected side instead of forcing a crossing', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.windDirection = 0;
   for (const [heading, trim, direction, title] of [
     [179, -70, -1, 'Переведи грот влево'],
@@ -182,7 +209,7 @@ test('near a following wind the hint improves the selected side instead of forci
 });
 
 test('if the current side cannot catch enough wind, hints consistently guide a manual side change', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.windDirection = 0;
   for (const side of [-1, 1]) {
     game.heading = side < 0 ? 140 : 220;
@@ -195,7 +222,7 @@ test('if the current side cannot catch enough wind, hints consistently guide a m
 });
 
 test('the complete route can be sailed without teleporting or hitting land', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.mode = 'sailing';
   let touchedLand = false;
   for (let i = 0; i < 12000 && game.mode === 'sailing'; i++) {
@@ -218,7 +245,7 @@ test('the complete route can be sailed without teleporting or hitting land', () 
 });
 
 test('the edge of the map stops outward travel but allows a return', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.mode = 'sailing';
   game.x = WORLD_RADIUS;
   game.heading = 90;
@@ -237,18 +264,18 @@ test('each control changes only its own sail and a reset restores both', () => {
   const game = createGame();
   game.mode = 'sailing';
   stepGame(game, { mainTrim: -1 }, 0.1);
-  assert.ok(game.mainTrim < 40);
-  assert.equal(game.jibTrim, 40);
+  assert.ok(game.mainTrim < 0);
+  assert.equal(game.jibTrim, 0);
   const main = game.mainTrim;
   stepGame(game, { jibTrim: 1 }, 0.1);
   assert.equal(game.mainTrim, main);
-  assert.ok(game.jibTrim > 40);
-  assert.equal(createGame().mainTrim, 40);
-  assert.equal(createGame().jibTrim, 40);
+  assert.ok(game.jibTrim > 0);
+  assert.equal(createGame().mainTrim, 0);
+  assert.equal(createGame().jibTrim, 0);
 });
 
 test('independent forces combine by sail area; either sail can drive the yacht alone', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.heading = 90;
   game.windDirection = 0;
   game.mainTrim = game.jibTrim = 45;
@@ -271,7 +298,7 @@ test('independent forces combine by sail area; either sail can drive the yacht a
 test('opposing sail forces slow the yacht, and both backed sails eventually drive it astern', () => {
   const speeds = [];
   for (const [mainTrim, jibTrim] of [[40, 40], [40, -40], [-40, 40], [-40, -40]]) {
-    const game = createGame();
+    const game = createRaisedGame();
     Object.assign(game, { mode: 'sailing', mainTrim, jibTrim });
     for (let i = 0; i < 300; i++) stepGame(game, {}, 0.1);
     speeds.push(game.speed);
@@ -281,7 +308,7 @@ test('opposing sail forces slow the yacht, and both backed sails eventually driv
 });
 
 test('feedback identifies the sail that needs attention', () => {
-  const game = createGame();
+  const game = createRaisedGame();
   game.heading = 90;
   game.windDirection = 0;
   game.mainTrim = 45;

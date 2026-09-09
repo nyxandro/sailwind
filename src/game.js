@@ -9,8 +9,8 @@ const MIN_TRIM_EFFICIENCY = 0.78;
 export function createGame() {
   const current = currentAt(0, 0);
   return {
-    mode: 'ready', x: 0, z: 0, heading: 20, mainTrim: 40, jibTrim: 40, speed: 0,
-    mainHoist: 1, jibHoist: 1, mainHoistTarget: 1, jibHoistTarget: 1,
+    mode: 'ready', x: 0, z: 0, heading: 20, mainTrim: 0, jibTrim: 0, speed: 0,
+    mainHoist: 0, jibHoist: 0, mainHoistTarget: 0, jibHoistTarget: 0,
     velocityX: 0, velocityZ: 0, waterSpeed: 0, groundSpeed: 0, yawRate: 0, rudder: 0,
     currentX: current.x, currentZ: current.z,
     windDirection: 300, windSpeed: 12, elapsed: 0, distance: 0,

@@ -9,6 +9,7 @@ import { createMarineLife } from './marine-life.js';
 import { createIsland } from './islands.js';
 import { createWake } from './wake.js';
 import { windHeel } from './motion.js';
+import { loadYachtModel, setHelm } from './yacht/model.js';
 import { prepareShaders, waitForGpu, yieldToBrowser } from './scene-startup.js';
 
 function createBuoy(point) {
@@ -112,8 +113,10 @@ export async function createScene(container, { checkpoint, signal, clock, onCont
       scene.add(createIsland(island, i));
       await yieldToBrowser(signal);
     }
-    const yacht = createBoat();
-    scene.add(yacht.boat);
+    const hull = await loadYachtModel('/models/oceanis.glb', signal);
+    // Own the loaded asset before assembly, so initialization errors also dispose it.
+    scene.add(hull.group);
+    const yacht = createBoat(hull);
     const buoys = ROUTE.map(createBuoy);
     buoys.forEach((buoy) => scene.add(buoy.group));
     const wind = createWind();
@@ -189,8 +192,7 @@ export async function createScene(container, { checkpoint, signal, clock, onCont
         const motionDelta = game.mode === 'paused' || game.mode === 'finished' ? 0 : dt;
         ocean.update(game, time, motionDelta);
         applyBuoyancy(yacht.boat, game.x, game.z, heading, time, windHeel(game, sail.power), ocean.heightAt, buoyancy, motionDelta);
-        yacht.rudder.rotation.y = radians(game.rudder * 30);
-        yacht.helm.rotation.z = -game.rudder * Math.PI * 0.75;
+        setHelm(yacht.hull, game.rudder);
         setSailTrim(
           yacht,
           game.mainTrim,

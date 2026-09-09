@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SAILS } from './world.js';
+import { RIG_LAYOUT } from './yacht/rig-layout.js';
 
 export function createRigging() {
   const group = new THREE.Group();
@@ -34,7 +35,7 @@ export function updateRigging(rigging, mainSail, jib) {
     break;
   }
   if (!foundClew) throw new Error('RIGGING_CLEW_MISSING: The jib geometry has no free lower corner for sheet attachment');
-  stretchRope(rigging.main, mainCorner, new THREE.Vector3(0, 1.15, 3.9));
-  stretchRope(rigging.jibPort, jibCorner, new THREE.Vector3(-1.65, 1.12, 1.65));
-  stretchRope(rigging.jibStarboard, jibCorner, new THREE.Vector3(1.65, 1.12, 1.65));
+  stretchRope(rigging.main, mainCorner, new THREE.Vector3(...RIG_LAYOUT.mainSheet));
+  stretchRope(rigging.jibPort, jibCorner, new THREE.Vector3(...RIG_LAYOUT.jibSheetPort));
+  stretchRope(rigging.jibStarboard, jibCorner, new THREE.Vector3(...RIG_LAYOUT.jibSheetStarboard));
 }

@@ -41,7 +41,7 @@ export function mountUI(root) {
         <div class="eyebrow"><span>ВЫДОХНИ. ТЫ В МОРЕ.</span></div>
         <h1 id="intro-title">Только ты.<br>Яхта. <span>И ветер.</span></h1>
         <p class="intro-description">Никаких моторов. Никакой спешки.<br>Почувствуй ветер, наполни парус<br>и найди свой курс.</p>
-        <button id="start-button" class="primary-button">Поднять паруса ${icon('arrow')}</button>
+        <button id="start-button" class="primary-button">Выйти в море ${icon('arrow')}</button>
         <div class="intro-meta"><span><i></i> Лёгкий старт</span><span>5 буёв на пути</span></div>
         <div class="intro-rule"><span class="rule-symbol">↗</span><p>Ветер не изменить.<br><strong>Но можно настроить парус.</strong></p></div>
       </section>
@@ -73,19 +73,19 @@ export function mountUI(root) {
       <div id="waypoint-marker" class="waypoint-marker" hidden><span id="marker-number">01</span><span id="marker-distance">132 м</span><i></i></div>
       <div class="camera-tools"><button id="wind-button" class="round-button" aria-label="Линии ветра" aria-pressed="true" title="Скрыть линии ветра">${icon('wind')}</button><button id="camera-button" class="round-button" aria-label="Вернуть камеру" title="Вернуть камеру">${icon('compass')}</button><button id="fullscreen-button" class="round-button" aria-label="На весь экран" title="На весь экран">${icon('expand')}</button></div>
 
-      <div class="sailing-feedback" id="sailing-feedback" role="status"><span class="feedback-symbol">${icon('wind')}</span><div><strong id="hint-title">Море ждёт тебя</strong><span id="hint-detail">Подними паруса, чтобы начать путешествие</span></div></div>
+      <div class="sailing-feedback" id="sailing-feedback" role="status"><span class="feedback-symbol">${icon('wind')}</span><div><strong id="hint-title">Море ждёт тебя</strong><span id="hint-detail">Начни путешествие, затем подними паруса ползунками «Подъём»</span></div></div>
 
       <section class="instruments glass" aria-label="Приборы яхты">
         <div class="instrument speed-instrument"><span class="eyebrow" id="motion-label">СКОРОСТЬ</span><div class="instrument-value"><strong id="speed" title="Скорость относительно берега">0.0</strong><span>узл</span></div><div class="speed-bars" aria-hidden="true">${'<i></i>'.repeat(18)}</div></div>
         <div class="instrument course-instrument"><span class="eyebrow">НОС ЯХТЫ</span><div class="instrument-value"><strong id="heading">020</strong><span>°</span></div><span class="instrument-note" id="course-name">Северо-восток</span></div>
         ${[['main', 'W', 'S'], ['jib', 'Q', 'E']].map(([key, left, right]) => `
           <div class="instrument sail-instrument" data-sail="${key}">
-            <div class="sail-heading"><label class="eyebrow" for="${key}-trim">${SAILS[key].label.toUpperCase()}</label><strong id="${key}-trim-value">+40°</strong></div>
-            <input id="${key}-trim" type="range" min="${-MAX_SAIL_ANGLE}" max="${MAX_SAIL_ANGLE}" value="40" aria-label="${SAILS[key].label}: угол паруса"/>
+            <div class="sail-heading"><label class="eyebrow" for="${key}-trim">${SAILS[key].label.toUpperCase()}</label><strong id="${key}-trim-value">0°</strong></div>
+            <input id="${key}-trim" type="range" min="${-MAX_SAIL_ANGLE}" max="${MAX_SAIL_ANGLE}" value="0" aria-label="${SAILS[key].label}: угол паруса"/>
             <div class="trim-labels"><span><kbd>${left}</kbd> Влево</span><span>0°</span><span>Вправо <kbd>${right}</kbd></span></div>
             <div class="hoist-control">
-              <div class="hoist-heading"><label for="${key}-hoist">Подъём</label><span id="${key}-hoist-value">100%</span></div>
-              <input id="${key}-hoist" class="hoist-slider" type="range" min="0" max="100" step="1" value="100" aria-label="${SAILS[key].label}: подъём паруса" aria-describedby="${key}-hoist-value"/>
+              <div class="hoist-heading"><label for="${key}-hoist">Подъём</label><span id="${key}-hoist-value">0%</span></div>
+              <input id="${key}-hoist" class="hoist-slider" type="range" min="0" max="100" step="1" value="0" aria-label="${SAILS[key].label}: подъём паруса" aria-describedby="${key}-hoist-value"/>
             </div>
             <div class="power-label"><span class="power-dot"></span><span id="${key}-power-label">Тяга</span><strong id="${key}-power-value"></strong></div>
           </div>`).join('')}
@@ -266,7 +266,7 @@ export function updateUI(refs, game) {
     refs['sailing-feedback'].dataset.tone = hint.tone;
   } else {
     refs['hint-title'].textContent = 'Море ждёт тебя';
-    refs['hint-detail'].textContent = 'Подними паруса, чтобы начать путешествие';
+    refs['hint-detail'].textContent = 'Начни путешествие, затем подними паруса ползунками «Подъём»';
     refs['sailing-feedback'].dataset.tone = 'good';
   }
   drawChart(refs, game);

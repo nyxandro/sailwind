@@ -67,7 +67,7 @@ export function createWake(heightAt) {
       if (waterSpeed > 0.4 && clock - lastEmission >= EMISSION_INTERVAL) {
         const heading = radians(game.heading);
         const surge = relativeX * Math.sin(heading) - relativeZ * Math.cos(heading);
-        const trailing = surge < 0 ? -5.7 : 4.8;
+        const trailing = surge < 0 ? -5.7 : 5.3;
         points.push({ x: game.x - Math.sin(heading) * trailing, z: game.z + Math.cos(heading) * trailing, nx: -relativeZ / waterSpeed, nz: relativeX / waterSpeed, speed: waterSpeed, age: 0, distance });
         if (points.length > CAPACITY) points.shift();
         lastEmission = clock;

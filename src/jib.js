@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { SAILS, radians } from './world.js';
 import { createClothGeometry, clothBulge } from './sail-cloth.js';
 import { clothFold, validateHoist } from './hoist.js';
+import { RIG_LAYOUT } from './yacht/rig-layout.js';
 
 export function createJib() {
   const geometry = createClothGeometry();
   const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: '#f7f4df', side: THREE.DoubleSide, roughness: 0.8 }));
-  mesh.position.set(0, 1.7, -1.2 - SAILS.jib.foot);
+  mesh.position.set(...RIG_LAYOUT.jibTack);
   mesh.castShadow = true;
   updateJib(mesh, 0, 0, 0, 0, 1);
   return mesh;

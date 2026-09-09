@@ -1,0 +1,11 @@
+{
+  "source": "Boat-web-preview.blend",
+  "source_sha256": "23812b1a0a676aa21364fa01ca010af5905a2f46f93efa84f5e72d00200e41da",
+  "blender": "5.2.1 LTS",
+  "scale": 0.82,
+  "lift": 0.65,
+  "fore_aft_offset": 0.55,
+  "triangles": 47240,
+  "bytes": 1580508,
+  "sha256": "eef3b11bc4f4511f1be86b5590503bed6841795ce9bb5ad13d37ba48abff06c3"
+}
